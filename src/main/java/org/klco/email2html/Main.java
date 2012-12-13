@@ -1,12 +1,16 @@
 package org.klco.email2html;
+
 import java.util.Properties;
 
 import org.klco.email2html.EmailReader;
+import org.klco.email2html.models.Email2HTMLConfiguration;
+import org.klco.email2html.utils.ConfigurationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Main {
 	private static final Logger log = LoggerFactory.getLogger(Main.class);
+	public static final String PROPERTIES_FILE_NAME = "email2html.properties";
 
 	/**
 	 * @param args
@@ -18,9 +22,11 @@ public class Main {
 			Properties props = new Properties();
 			try {
 				props.load(Main.class.getClassLoader().getResourceAsStream(
-						"email-reader.properties"));
-				EmailReader reader = new EmailReader(props);
-				reader.readEmails(args[0]);
+						PROPERTIES_FILE_NAME));
+				Email2HTMLConfiguration config = ConfigurationUtils
+						.loadProperties(props);
+				EmailReader reader = new EmailReader(config);
+				reader.readEmails();
 			} catch (Exception e) {
 				log.error("Unexpected exception loading emails", e);
 			}
@@ -29,5 +35,4 @@ public class Main {
 		}
 
 	}
-
 }

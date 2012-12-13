@@ -30,6 +30,7 @@ import javax.mail.internet.MimeMultipart;
 import javax.mail.search.SubjectTerm;
 
 import org.apache.commons.io.IOUtils;
+import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,7 @@ public class EmailReader {
 	private static final Logger log = LoggerFactory
 			.getLogger(EmailReader.class);
 
-	private Properties properties;
+	private Email2HTMLConfiguration config;
 
 	private static final SimpleDateFormat FILE_DATE_FORMAT = new SimpleDateFormat(
 			"yyyy-MM-dd-HH-mm-ss");
@@ -45,39 +46,36 @@ public class EmailReader {
 	private static final SimpleDateFormat READABLE_DATE_FORMAT = new SimpleDateFormat(
 			"MMM d, yyyy");
 
-	public EmailReader(Properties properties) {
-		this.properties = properties;
+	public EmailReader(Email2HTMLConfiguration config) {
+		this.config = config;
 	}
 
-	public void readEmails(String password) {
+	public void readEmails() {
 		log.info("getEmail");
 		Properties props = System.getProperties();
 		props.setProperty("mail.store.protocol", "imaps");
 		try {
 			log.info("Creating output dir");
-			File outputDir = new File(properties.getProperty("output.dir"));
+			File outputDir = new File(config.getOutputDir());
 			if (!outputDir.exists()) {
 				outputDir.mkdirs();
 			}
 
 			log.info("Loading template");
 			InputStream in = EmailReader.class.getClassLoader()
-					.getResourceAsStream(
-							properties.getProperty("email.template.name"));
+					.getResourceAsStream(config.getTemplate());
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			IOUtils.copy(in, baos);
 			String templateStr = new String(baos.toByteArray(), "UTF-8");
 
 			Session session = Session.getDefaultInstance(props, null);
 			Store store = session.getStore("imaps");
-			store.connect(properties.getProperty("email.url"),
-					properties.getProperty("email.user"), password);
-			Folder inbox = store.getFolder(properties
-					.getProperty("email.folder"));
+			store.connect(config.getUrl(), config.getUsername(),
+					config.getPassword());
+			Folder inbox = store.getFolder(config.getFolder());
 			inbox.open(Folder.READ_ONLY);
 
-			SubjectTerm subjectTerm = new SubjectTerm(
-					properties.getProperty("search.subject"));
+			SubjectTerm subjectTerm = new SubjectTerm(config.getSearchSubject());
 
 			Queue<Message> messages = new LinkedList<Message>();
 			for (Message message : inbox.search(subjectTerm)) {
