@@ -1,0 +1,31 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.klco</groupId>
+  <version>0.0.1-SNAPSHOT</version>
+  <dependencies>
+  	<dependency>
+  		<groupId>javax.mail</groupId>
+  		<artifactId>mail</artifactId>
+  		<version>1.4.4</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>commons-io</groupId>
+  		<artifactId>commons-io</artifactId>
+  		<version>1.4</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.slf4j</groupId>
+  		<artifactId>slf4j-simple</artifactId>
+  		<version>1.7.2</version>
+  	</dependency>
+  </dependencies>
+  <artifactId>email2html</artifactId>
+  <scm>
+  	<url>https://github.com/klcodanr/email2html.git</url>
+  	<connection>scm:git:https://github.com/klcodanr/email2html.git</connection>
+  </scm>
+  <name>Email2HTML</name>
+  <url>https://github.com/klcodanr/email2html</url>
+  <description>Simple library for converting emails to a HTML Site</description>
+  <inceptionYear>2012</inceptionYear>
+</project>
