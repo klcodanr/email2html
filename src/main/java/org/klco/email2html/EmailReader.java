@@ -1,22 +1,38 @@
+/*
+ * Copyright (C) 2012 Dan Klco
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of 
+ * this software and associated documentation files (the "Software"), to deal in 
+ * the Software without restriction, including without limitation the rights to 
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies 
+ * of the Software, and to permit persons to whom the Software is furnished to do 
+ * so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in 
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+ * IN THE SOFTWARE.
+ */
 package org.klco.email2html;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Queue;
-import java.util.Set;
 
 import javax.mail.BodyPart;
 import javax.mail.Folder;
@@ -31,25 +47,44 @@ import javax.mail.search.SubjectTerm;
 
 import org.apache.commons.io.IOUtils;
 import org.klco.email2html.models.Email2HTMLConfiguration;
+import org.klco.email2html.models.EmailMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class for reading emails from an email server.
+ * 
+ * @author dklco
+ */
 public class EmailReader {
+
+	private OutputWriter outputWriter = null;
+
+	/** The Constant log. */
 	private static final Logger log = LoggerFactory
 			.getLogger(EmailReader.class);
 
+	/** The config. */
 	private Email2HTMLConfiguration config;
 
-	private static final SimpleDateFormat FILE_DATE_FORMAT = new SimpleDateFormat(
-			"yyyy-MM-dd-HH-mm-ss");
-
+	/** The Constant READABLE_DATE_FORMAT. */
 	private static final SimpleDateFormat READABLE_DATE_FORMAT = new SimpleDateFormat(
 			"MMM d, yyyy");
 
+	/**
+	 * Instantiates a new email reader.
+	 * 
+	 * @param config
+	 *            the config
+	 */
 	public EmailReader(Email2HTMLConfiguration config) {
 		this.config = config;
+		outputWriter = new OutputWriter(config);
 	}
 
+	/**
+	 * Read emails.
+	 */
 	public void readEmails() {
 		log.info("getEmail");
 		Properties props = System.getProperties();
@@ -81,55 +116,30 @@ public class EmailReader {
 			for (Message message : inbox.search(subjectTerm)) {
 				messages.add(message);
 			}
-
-			List<Message> sortedMessages = new ArrayList<Message>();
+			
+			List<EmailMessage> sortedMessages = new ArrayList<EmailMessage>();
 			log.debug("Found {} messages", messages.size());
 			while (messages.peek() != null) {
 				Message message = messages.poll();
 				try {
-					saveMessage(message, outputDir, templateStr);
+					sortedMessages.add(saveMessage(message, outputDir, templateStr));
 				} catch (Exception e) {
 					log.error(
 							"Exception saving message: "
-									+ FILE_DATE_FORMAT.format(message
+									+ READABLE_DATE_FORMAT.format(message
 											.getSentDate()), e);
 				}
-				sortedMessages.add(message);
 			}
 
-			Collections.sort(sortedMessages, new Comparator<Message>() {
-				public int compare(Message o1, Message o2) {
-					try {
-						return o1.getSentDate().compareTo(o2.getSentDate());
-					} catch (MessagingException e) {
-						return -1;
-					}
+			log.debug("Sorting messages");
+			Collections.sort(sortedMessages, new Comparator<EmailMessage>() {
+				public int compare(EmailMessage o1, EmailMessage o2) {
+					return o1.getSentDate().compareTo(o2.getSentDate());
 				}
-
 			});
-			StringBuffer body = new StringBuffer("<ul>");
-			for (Message message : sortedMessages) {
-				body.append("<li><a href=\""
-						+ FILE_DATE_FORMAT.format(message.getSentDate())
-						+ ".html\">From " + getSender(message) + " on "
-						+ READABLE_DATE_FORMAT.format(message.getSentDate())
-						+ "</a></li>");
-			}
-			body.append("</ul>");
-
-			log.debug("Creating index file");
-			String indexPage = templateStr.replace("{TITLE}",
-					"Sarah Picture of the Day").replace("{BODY}",
-					body.toString());
-
-			File indexFile = new File(outputDir, "index.html");
-			if (indexFile.exists()) {
-				indexFile.createNewFile();
-
-			}
-			FileOutputStream fos = new FileOutputStream(indexFile);
-			IOUtils.copy(new ByteArrayInputStream(indexPage.getBytes()), fos);
-			IOUtils.closeQuietly(fos);
+			
+			log.debug("Writing index file");
+			outputWriter.writeIndex(sortedMessages);
 
 		} catch (MessagingException e) {
 			log.error("Exception accessing emails", e);
@@ -138,6 +148,13 @@ public class EmailReader {
 		}
 	}
 
+	/**
+	 * Trim message.
+	 * 
+	 * @param message
+	 *            the message
+	 * @return the string
+	 */
 	private static String trimMessage(String message) {
 		log.trace("trimMessage");
 		if (message.contains("gmail_quote")) {
@@ -150,6 +167,13 @@ public class EmailReader {
 		return message;
 	}
 
+	/**
+	 * Gets the sender.
+	 * 
+	 * @param message
+	 *            the message
+	 * @return the sender
+	 */
 	private static String getSender(Message message) {
 		log.trace("getSender");
 		String from = "";
@@ -168,25 +192,33 @@ public class EmailReader {
 		return from;
 	}
 
-	private void saveMessage(Message message, File outputDir, String templateStr)
+	/**
+	 * Save message.
+	 * 
+	 * @param message
+	 *            the message
+	 * @param outputDir
+	 *            the output dir
+	 * @param templateStr
+	 *            the template str
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 * @throws MessagingException
+	 *             the messaging exception
+	 */
+	private EmailMessage saveMessage(Message message, File outputDir, String templateStr)
 			throws IOException, MessagingException {
 		log.trace("saveMessage");
 
 		log.debug("Processing message from: " + message.getSentDate());
-		File messageFile = new File(outputDir.getAbsolutePath()
-				+ File.separator
-				+ FILE_DATE_FORMAT.format(message.getSentDate()) + ".html");
 
-		log.debug("Output file: " + messageFile.getAbsolutePath());
+		log.debug("Loading default properties");
+		EmailMessage emailMessage = new EmailMessage();
+		emailMessage.setSubject(message.getSubject());
+		emailMessage.setSender(getSender(message));
+		emailMessage.setSentDate(message.getSentDate());
 
-		if (!messageFile.exists() || messageFile.length() == 0) {
-
-			File imageFolder = new File(outputDir.getAbsolutePath()
-					+ File.separator
-					+ FILE_DATE_FORMAT.format(message.getSentDate()));
-
-			Set<String> imageNames = new HashSet<String>();
-			String body = null;
+		if (outputWriter.fileExists(emailMessage)) {
 
 			if (message.getContent() instanceof MimeMultipart) {
 				MimeMultipart parts = (MimeMultipart) message.getContent();
@@ -197,19 +229,7 @@ public class EmailReader {
 
 					if (bodyPart.getContentType().toUpperCase()
 							.startsWith("IMAGE")) {
-						if (!imageFolder.exists()) {
-							log.debug("Creating image folder");
-							imageFolder.mkdirs();
-						}
-						log.debug("Writing image file: "
-								+ bodyPart.getFileName());
-						File imageFile = new File(imageFolder,
-								bodyPart.getFileName());
-						imageFile.createNewFile();
-						OutputStream os = new FileOutputStream(imageFile);
-						IOUtils.copy(bodyPart.getInputStream(), os);
-						IOUtils.closeQuietly(os);
-						imageNames.add(imageFile.getName());
+						outputWriter.writeAttachment(emailMessage, bodyPart);
 					} else {
 						log.debug("Processing message text");
 						if (bodyPart.getContent() instanceof MimeMultipart) {
@@ -220,12 +240,21 @@ public class EmailReader {
 
 								if (textPart.getContentType().toLowerCase()
 										.startsWith("text/html")
-										|| (body == null && textPart
+										|| (emailMessage.getMessage() == null && textPart
 												.getContentType().toLowerCase()
 												.startsWith("text/plain"))) {
-									body = trimMessage((String) textPart
-											.getContent());
+									log.debug("Loading message from multi body part");
+									emailMessage
+											.setFullMessage((String) textPart
+													.getContent());
+									emailMessage
+											.setMessage(trimMessage(emailMessage
+													.getFullMessage()));
 
+								} else {
+									log.debug(
+											"Skipping part with content type: {}",
+											textPart.getContentType());
 								}
 							}
 						} else if (bodyPart.getContent() instanceof MimeBodyPart) {
@@ -233,52 +262,37 @@ public class EmailReader {
 									.getContent();
 							if (mimePart.getContentType().toLowerCase()
 									.startsWith("text/html")
-									|| body == null) {
-								body = trimMessage((String) mimePart
+									|| emailMessage.getMessage() == null) {
+								log.debug("Loading message from mime body part");
+								emailMessage.setFullMessage((String) mimePart
 										.getContent());
+								emailMessage
+										.setMessage(trimMessage(emailMessage
+												.getFullMessage()));
+							} else {
+								log.debug(
+										"Skipping part with content type: {}",
+										mimePart.getContentType());
 							}
 						} else {
-							body = trimMessage(bodyPart.getContent().toString());
-
+							log.debug("Loading message from body part");
+							emailMessage.setFullMessage(bodyPart.toString());
+							emailMessage.setMessage(trimMessage(emailMessage
+									.getFullMessage()));
 						}
 					}
 				}
 			} else {
-				body = trimMessage(message.getContent().toString());
+				log.debug("Loading message from email content");
+				emailMessage.setFullMessage(message.getContent().toString());
+				emailMessage.setMessage(trimMessage(emailMessage
+						.getFullMessage()));
 			}
 
-			if (!messageFile.exists()) {
-				messageFile.createNewFile();
-			}
-			String template = templateStr
-					.replace(
-							"{TITLE}",
-							"Sarah Picture of the Day: "
-									+ READABLE_DATE_FORMAT.format(message
-											.getSentDate()));
-
-			log.debug("Creating image links");
-			StringBuffer images = new StringBuffer("<ul id=\"images\">");
-			for (String image : imageNames) {
-				images.append("<li><img src=\"" + imageFolder.getName() + "/"
-						+ image + "\"></li>");
-			}
-			images.append("</ul><p><a href=\"./index.html\"> &lt;&lt; Home</a></p>");
-
-			body += "<p><strong>From: " + getSender(message) + "</strong></p>"
-					+ images.toString();
-			template = template
-					.replace("{BODY}",
-							"<p><a href=\"./index.html\"> &lt;&lt; Home</a></p>"
-									+ body);
-
-			FileOutputStream fos = new FileOutputStream(messageFile);
-			IOUtils.copy(new ByteArrayInputStream(template.getBytes("UTF-8")),
-					fos);
-			IOUtils.closeQuietly(fos);
+			outputWriter.writeHTML(emailMessage);
 		} else {
 			log.debug("Message already exists, skipping");
 		}
-
+		return emailMessage;
 	}
 }

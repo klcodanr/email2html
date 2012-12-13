@@ -27,9 +27,14 @@ package org.klco.email2html.models;
  * @author dklco
  */
 public class Email2HTMLConfiguration {
-	
+
 	/** The name of the folder to retrieve, defaults to 'Inbox'. */
 	private String folder = "Inbox";
+
+	/**
+	 * The path to the HTML Template to use for the index file, must be set.
+	 */
+	private String indexTemplate;
 
 	/**
 	 * The output directory to which to save the files, defaults to the current
@@ -72,8 +77,17 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
+	 * Gets the index template.
+	 * 
+	 * @return the index template
+	 */
+	public String getIndexTemplate() {
+		return indexTemplate;
+	}
+
+	/**
 	 * Gets the output dir.
-	 *
+	 * 
 	 * @return the output dir
 	 */
 	public String getOutputDir() {
@@ -82,7 +96,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Gets the password.
-	 *
+	 * 
 	 * @return the password
 	 */
 	public String getPassword() {
@@ -91,7 +105,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Gets the search subject.
-	 *
+	 * 
 	 * @return the search subject
 	 */
 	public String getSearchSubject() {
@@ -100,7 +114,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Gets the template.
-	 *
+	 * 
 	 * @return the template
 	 */
 	public String getTemplate() {
@@ -109,7 +123,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Gets the url.
-	 *
+	 * 
 	 * @return the url
 	 */
 	public String getUrl() {
@@ -118,7 +132,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Gets the username.
-	 *
+	 * 
 	 * @return the username
 	 */
 	public String getUsername() {
@@ -127,17 +141,29 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the folder.
-	 *
-	 * @param folder the new folder
+	 * 
+	 * @param folder
+	 *            the new folder
 	 */
 	public void setFolder(String folder) {
 		this.folder = folder;
 	}
 
 	/**
+	 * Sets the index template.
+	 * 
+	 * @param indexTemplate
+	 *            the new index template
+	 */
+	public void setIndexTemplate(String indexTemplate) {
+		this.indexTemplate = indexTemplate;
+	}
+
+	/**
 	 * Sets the output dir.
-	 *
-	 * @param outputDir the new output dir
+	 * 
+	 * @param outputDir
+	 *            the new output dir
 	 */
 	public void setOutputDir(String outputDir) {
 		this.outputDir = outputDir;
@@ -145,8 +171,9 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the password.
-	 *
-	 * @param password the new password
+	 * 
+	 * @param password
+	 *            the new password
 	 */
 	public void setPassword(String password) {
 		this.password = password;
@@ -154,8 +181,9 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the search subject.
-	 *
-	 * @param searchSubject the new search subject
+	 * 
+	 * @param searchSubject
+	 *            the new search subject
 	 */
 	public void setSearchSubject(String searchSubject) {
 		this.searchSubject = searchSubject;
@@ -163,8 +191,9 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the template.
-	 *
-	 * @param template the new template
+	 * 
+	 * @param template
+	 *            the new template
 	 */
 	public void setTemplate(String template) {
 		this.template = template;
@@ -172,8 +201,9 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the url.
-	 *
-	 * @param url the new url
+	 * 
+	 * @param url
+	 *            the new url
 	 */
 	public void setUrl(String url) {
 		this.url = url;
@@ -181,8 +211,9 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the username.
-	 *
-	 * @param username the new username
+	 * 
+	 * @param username
+	 *            the new username
 	 */
 	public void setUsername(String username) {
 		this.username = username;
