@@ -1,4 +1,4 @@
-package org.klco;
+package org.klco.email2html;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
