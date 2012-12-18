@@ -21,18 +21,13 @@
  */
 package org.klco.email2html;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
-import java.util.Queue;
 
 import javax.mail.BodyPart;
 import javax.mail.Folder;
@@ -45,7 +40,6 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.search.SubjectTerm;
 
-import org.apache.commons.io.IOUtils;
 import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.klco.email2html.models.EmailMessage;
 import org.slf4j.Logger;
@@ -90,39 +84,30 @@ public class EmailReader {
 		Properties props = System.getProperties();
 		props.setProperty("mail.store.protocol", "imaps");
 		try {
-			log.info("Creating output dir");
-			File outputDir = new File(config.getOutputDir());
-			if (!outputDir.exists()) {
-				outputDir.mkdirs();
-			}
-
-			log.info("Loading template");
-			InputStream in = EmailReader.class.getClassLoader()
-					.getResourceAsStream(config.getTemplate());
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			IOUtils.copy(in, baos);
-			String templateStr = new String(baos.toByteArray(), "UTF-8");
 
 			Session session = Session.getDefaultInstance(props, null);
 			Store store = session.getStore("imaps");
 			store.connect(config.getUrl(), config.getUsername(),
 					config.getPassword());
-			Folder inbox = store.getFolder(config.getFolder());
-			inbox.open(Folder.READ_ONLY);
+			Folder folder = store.getFolder(config.getFolder());
+			folder.open(Folder.READ_ONLY);
 
-			SubjectTerm subjectTerm = new SubjectTerm(config.getSearchSubject());
-
-			Queue<Message> messages = new LinkedList<Message>();
-			for (Message message : inbox.search(subjectTerm)) {
-				messages.add(message);
+			Message[] messages = null;
+			if (config.getSearchSubject() != null) {
+				log.debug("Searching for messages with subject {}",
+						config.getSearchSubject());
+				SubjectTerm subjectTerm = new SubjectTerm(
+						config.getSearchSubject());
+				messages = folder.search(subjectTerm);
+			} else {
+				messages = folder.getMessages();
 			}
-			
+
 			List<EmailMessage> sortedMessages = new ArrayList<EmailMessage>();
-			log.debug("Found {} messages", messages.size());
-			while (messages.peek() != null) {
-				Message message = messages.poll();
+			log.debug("Loading messages from the server");
+			for (Message message : messages) {
 				try {
-					sortedMessages.add(saveMessage(message, outputDir, templateStr));
+					sortedMessages.add(saveMessage(message));
 				} catch (Exception e) {
 					log.error(
 							"Exception saving message: "
@@ -137,7 +122,7 @@ public class EmailReader {
 					return o1.getSentDate().compareTo(o2.getSentDate());
 				}
 			});
-			
+
 			log.debug("Writing index file");
 			outputWriter.writeIndex(sortedMessages);
 
@@ -206,8 +191,8 @@ public class EmailReader {
 	 * @throws MessagingException
 	 *             the messaging exception
 	 */
-	private EmailMessage saveMessage(Message message, File outputDir, String templateStr)
-			throws IOException, MessagingException {
+	private EmailMessage saveMessage(Message message) throws IOException,
+			MessagingException {
 		log.trace("saveMessage");
 
 		log.debug("Processing message from: " + message.getSentDate());
@@ -218,8 +203,7 @@ public class EmailReader {
 		emailMessage.setSender(getSender(message));
 		emailMessage.setSentDate(message.getSentDate());
 
-		if (outputWriter.fileExists(emailMessage)) {
-
+		if (!outputWriter.fileExists(emailMessage)) {
 			if (message.getContent() instanceof MimeMultipart) {
 				MimeMultipart parts = (MimeMultipart) message.getContent();
 				for (int i = 0; i < parts.getCount(); i++) {

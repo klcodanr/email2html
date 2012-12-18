@@ -23,12 +23,12 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private String folder = "Inbox";
 
 	/**
-	 * The path to the HTML Template to use for the index file, must be set.
+	 * The path to the folder containing the templates.
 	 * 
 	 * @parameter
 	 * @required
 	 */
-	private String indexTemplate;
+	private String templateDir;
 
 	/**
 	 * The output directory to which to save the files, defaults to the current
@@ -52,13 +52,6 @@ public class Email2HTMLMojo extends AbstractMojo {
 	 * @parameter
 	 */
 	private String searchSubject;
-
-	/**
-	 * The path to the HTML Template to use, must be set.
-	 * 
-	 * @parameter
-	 */
-	private String template;
 
 	/**
 	 * The URL to connect to retrieve the email, must be set.
@@ -86,11 +79,10 @@ public class Email2HTMLMojo extends AbstractMojo {
 
 		Email2HTMLConfiguration config = new Email2HTMLConfiguration();
 		config.setFolder(folder);
-		config.setIndexTemplate(indexTemplate);
 		config.setOutputDir(outputDir);
 		config.setPassword(password);
 		config.setSearchSubject(searchSubject);
-		config.setTemplate(template);
+		config.setTemplateDir(templateDir);
 		config.setUrl(url);
 		config.setUsername(username);
 

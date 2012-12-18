@@ -21,6 +21,7 @@
  */
 package org.klco.email2html.models;
 
+// TODO: Auto-generated Javadoc
 /**
  * Configures the Email -> HTML process.
  * 
@@ -30,11 +31,6 @@ public class Email2HTMLConfiguration {
 
 	/** The name of the folder to retrieve, defaults to 'Inbox'. */
 	private String folder = "Inbox";
-
-	/**
-	 * The path to the HTML Template to use for the index file, must be set.
-	 */
-	private String indexTemplate;
 
 	/**
 	 * The output directory to which to save the files, defaults to the current
@@ -53,9 +49,9 @@ public class Email2HTMLConfiguration {
 	private String searchSubject;
 
 	/**
-	 * The path to the HTML Template to use, must be set.
+	 * The path to the folder containing the Velocity templates, must be set.
 	 */
-	private String template;
+	private String templateDir;
 
 	/**
 	 * The URL to connect to retrieve the email.
@@ -74,15 +70,6 @@ public class Email2HTMLConfiguration {
 	 */
 	public String getFolder() {
 		return folder;
-	}
-
-	/**
-	 * Gets the index template.
-	 * 
-	 * @return the index template
-	 */
-	public String getIndexTemplate() {
-		return indexTemplate;
 	}
 
 	/**
@@ -113,12 +100,12 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
-	 * Gets the template.
-	 * 
-	 * @return the template
+	 * Gets the template dir.
+	 *
+	 * @return the template dir
 	 */
-	public String getTemplate() {
-		return template;
+	public String getTemplateDir() {
+		return templateDir;
 	}
 
 	/**
@@ -147,16 +134,6 @@ public class Email2HTMLConfiguration {
 	 */
 	public void setFolder(String folder) {
 		this.folder = folder;
-	}
-
-	/**
-	 * Sets the index template.
-	 * 
-	 * @param indexTemplate
-	 *            the new index template
-	 */
-	public void setIndexTemplate(String indexTemplate) {
-		this.indexTemplate = indexTemplate;
 	}
 
 	/**
@@ -190,13 +167,12 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
-	 * Sets the template.
-	 * 
-	 * @param template
-	 *            the new template
+	 * Sets the template dir.
+	 *
+	 * @param templateDir the new template dir
 	 */
-	public void setTemplate(String template) {
-		this.template = template;
+	public void setTemplateDir(String templateDir) {
+		this.templateDir = templateDir;
 	}
 
 	/**

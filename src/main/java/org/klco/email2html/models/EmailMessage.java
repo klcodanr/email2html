@@ -22,6 +22,7 @@
 package org.klco.email2html.models;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -33,7 +34,7 @@ import java.util.List;
 public class EmailMessage {
 
 	/** The attachments. */
-	private List<File> attachments;
+	private List<File> attachments = new ArrayList<File>();
 
 	/** The full message. */
 	private String fullMessage;

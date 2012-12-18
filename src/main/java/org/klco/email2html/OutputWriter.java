@@ -81,14 +81,15 @@ public class OutputWriter {
 		}
 
 		log.debug("Initializing templating engine");
+		Velocity.setProperty("file.resource.loader.path",
+				config.getTemplateDir());
 		Velocity.init();
 
-		log.debug("Initializing template from file {}", config.getTemplate());
-		template = Velocity.getTemplate(config.getTemplate());
+		log.debug("Initializing template template.vm");
+		template = Velocity.getTemplate("template.vm");
 
-		log.debug("Initializing index template from file {}",
-				config.getIndexTemplate());
-		indexTemplate = Velocity.getTemplate(config.getIndexTemplate());
+		log.debug("Initializing index template: index.vm");
+		indexTemplate = Velocity.getTemplate("index.vm");
 	}
 
 	/**
