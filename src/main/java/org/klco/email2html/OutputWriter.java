@@ -37,6 +37,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
+import org.apache.velocity.tools.ToolboxFactory;
+import org.apache.velocity.tools.generic.DateTool;
 import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.klco.email2html.models.EmailMessage;
 import org.slf4j.Logger;
@@ -121,6 +123,7 @@ public class OutputWriter {
 		log.debug("Initializing templating context");
 		VelocityContext context = new VelocityContext();
 		context.put("emailMessage", emailMessage);
+		context.put("dateTool", new DateTool());
 
 		File messageFile = new File(outputDir.getAbsolutePath()
 				+ File.separator
