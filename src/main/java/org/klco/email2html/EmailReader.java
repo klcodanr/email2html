@@ -146,8 +146,8 @@ public class EmailReader {
 			message = message.substring(0, message.indexOf("gmail_quote") - 12);
 		}
 
-		if (message.contains("hr")) {
-			message = message.substring(0, message.indexOf("hr") - 1);
+		if (message.contains("<hr")) {
+			message = message.substring(0, message.indexOf("<hr") - 1);
 		}
 		return message;
 	}
