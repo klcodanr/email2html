@@ -23,12 +23,12 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private String folder = "Inbox";
 
 	/**
-	 * The path to the folder containing the templates.
+	 * The name(s) of the template(s) to create as 'index' files. These files
+	 * will be passed all of the loaded messages. Comma separate the values.
 	 * 
-	 * @parameter
-	 * @required
+	 * @parameter default-value="index.html.vm"
 	 */
-	private String templateDir;
+	private String indexTemplateNames;
 
 	/**
 	 * The name of the template to use for messages.
@@ -36,14 +36,6 @@ public class Email2HTMLMojo extends AbstractMojo {
 	 * @parameter default-value="message.vm"
 	 */
 	private String messageTemplateName;
-
-	/**
-	 * The name(s) of the template(s) to create as 'index' files. These files
-	 * will be passed all of the loaded messages. Comma separate the values.
-	 * 
-	 * @parameter default-value="index.html.vm"
-	 */
-	private String indexTemplateNames;
 
 	/**
 	 * The output directory to which to save the files, defaults to the current
@@ -67,6 +59,30 @@ public class Email2HTMLMojo extends AbstractMojo {
 	 * @parameter
 	 */
 	private String searchSubject;
+
+	/**
+	 * The path to the folder containing the templates.
+	 * 
+	 * @parameter
+	 * @required
+	 */
+	private String templateDir;
+
+	/**
+	 * The height to create thumbnails of any image attachments, set as -1 to
+	 * not create thumbnails.
+	 * 
+	 * @parameter default-value="100"
+	 */
+	private int thumbnailHeight;
+
+	/**
+	 * The width to create thumbnails of any image attachments, set as -1 to not
+	 * create thumbnails.
+	 * 
+	 * @parameter default-value="100"
+	 */
+	private int thumbnailWidth;
 
 	/**
 	 * The URL to connect to retrieve the email, must be set.
@@ -100,6 +116,8 @@ public class Email2HTMLMojo extends AbstractMojo {
 		config.setPassword(password);
 		config.setSearchSubject(searchSubject);
 		config.setTemplateDir(templateDir);
+		config.setThumbnailHeight(String.valueOf(thumbnailHeight));
+		config.setThumbnailWidth(String.valueOf(thumbnailWidth));
 		config.setUrl(url);
 		config.setUsername(username);
 

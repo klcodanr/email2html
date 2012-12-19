@@ -58,6 +58,12 @@ public class Email2HTMLConfiguration {
 	 */
 	private String templateDir;
 
+	/** The thumbnail height. */
+	private String thumbnailHeight;
+
+	/** The thumbnail width. */
+	private String thumbnailWidth;
+
 	/**
 	 * The URL to connect to retrieve the email.
 	 */
@@ -79,7 +85,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Gets the index template names.
-	 *
+	 * 
 	 * @return the index template names
 	 */
 	public String getIndexTemplateNames() {
@@ -88,7 +94,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Gets the message template name.
-	 *
+	 * 
 	 * @return the message template name
 	 */
 	public String getMessageTemplateName() {
@@ -132,6 +138,24 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
+	 * Gets the thumbnail height.
+	 * 
+	 * @return the thumbnail height
+	 */
+	public String getThumbnailHeight() {
+		return thumbnailHeight;
+	}
+
+	/**
+	 * Gets the thumbnail width.
+	 * 
+	 * @return the thumbnail width
+	 */
+	public String getThumbnailWidth() {
+		return thumbnailWidth;
+	}
+
+	/**
 	 * Gets the url.
 	 * 
 	 * @return the url
@@ -161,8 +185,9 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the index template names.
-	 *
-	 * @param indexTemplateNames the new index template names
+	 * 
+	 * @param indexTemplateNames
+	 *            the new index template names
 	 */
 	public void setIndexTemplateNames(String indexTemplateNames) {
 		this.indexTemplateNames = indexTemplateNames;
@@ -170,8 +195,9 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the message template name.
-	 *
-	 * @param messageTemplateName the new message template name
+	 * 
+	 * @param messageTemplateName
+	 *            the new message template name
 	 */
 	public void setMessageTemplateName(String messageTemplateName) {
 		this.messageTemplateName = messageTemplateName;
@@ -215,6 +241,26 @@ public class Email2HTMLConfiguration {
 	 */
 	public void setTemplateDir(String templateDir) {
 		this.templateDir = templateDir;
+	}
+
+	/**
+	 * Sets the thumbnail height.
+	 * 
+	 * @param thumbnailHeight
+	 *            the new thumbnail height
+	 */
+	public void setThumbnailHeight(String thumbnailHeight) {
+		this.thumbnailHeight = thumbnailHeight;
+	}
+
+	/**
+	 * Sets the thumbnail width.
+	 * 
+	 * @param thumbnailWidth
+	 *            the new thumbnail width
+	 */
+	public void setThumbnailWidth(String thumbnailWidth) {
+		this.thumbnailWidth = thumbnailWidth;
 	}
 
 	/**

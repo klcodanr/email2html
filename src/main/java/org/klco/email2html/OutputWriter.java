@@ -21,6 +21,8 @@
  */
 package org.klco.email2html;
 
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,6 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 
@@ -67,6 +70,10 @@ public class OutputWriter {
 	private static final Logger log = LoggerFactory
 			.getLogger(OutputWriter.class);
 
+	private boolean createThumbnails = true;
+	private int thumbnailWidth;
+	private int thumbnailHeight;
+
 	/**
 	 * Constructs a new OutputWriter.
 	 * 
@@ -95,6 +102,12 @@ public class OutputWriter {
 		for (String templateName : config.getIndexTemplateNames().split("\\,")) {
 			log.debug("Initializing index template from: {}", templateName);
 			indexTemplates.add(Velocity.getTemplate(templateName));
+		}
+
+		thumbnailHeight = Integer.parseInt(config.getThumbnailHeight(), 10);
+		thumbnailWidth = Integer.parseInt(config.getThumbnailWidth(), 10);
+		if (thumbnailHeight == -1 || thumbnailWidth == -1) {
+			createThumbnails = false;
 		}
 	}
 
@@ -215,25 +228,54 @@ public class OutputWriter {
 			BodyPart bodyPart) throws IOException, MessagingException {
 		log.trace("writeAttachment");
 
-		File imageFolder = new File(outputDir.getAbsolutePath()
+		File attachmentFolder = new File(outputDir.getAbsolutePath()
 				+ File.separator
 				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
 
-		if (!imageFolder.exists()) {
+		if (!attachmentFolder.exists()) {
 			log.debug("Creating image folder");
-			imageFolder.mkdirs();
+			attachmentFolder.mkdirs();
 		}
 		log.debug("Writing image file: " + bodyPart.getFileName());
-		File imageFile = new File(imageFolder, bodyPart.getFileName());
-		imageFile.createNewFile();
+		File attachmentFile = new File(attachmentFolder, bodyPart.getFileName());
+
+		if (!attachmentFile.exists()) {
+			attachmentFile.createNewFile();
+		}
 		OutputStream os = null;
 		try {
 			log.debug("Writing to file");
-			os = new FileOutputStream(imageFile);
+			os = new FileOutputStream(attachmentFile);
 			IOUtils.copy(bodyPart.getInputStream(), os);
-			containingMessage.getAttachments().add(imageFile);
+			containingMessage.getAttachments().add(attachmentFile);
 		} finally {
 			IOUtils.closeQuietly(os);
+		}
+		log.debug("Attachement saved");
+
+		if (createThumbnails
+				&& bodyPart.getContentType().toLowerCase().startsWith("image")) {
+			log.debug("Creating thumbnail");
+			String contentType = bodyPart.getContentType().substring(0,
+					bodyPart.getContentType().indexOf(";"));
+			log.debug("Creating thumbnail of type: " + contentType);
+
+			File thumbnailFile = new File(attachmentFolder, "thumbnail-"
+					+ bodyPart.getFileName());
+			if (!thumbnailFile.exists()) {
+				thumbnailFile.createNewFile();
+			}
+			log.debug("Creating thumbnail file: {}",
+					thumbnailFile.getAbsolutePath());
+
+			BufferedImage renderedImg = new BufferedImage(100, 100,
+					BufferedImage.TYPE_INT_RGB);
+			renderedImg.createGraphics().drawImage(
+					ImageIO.read(bodyPart.getInputStream()).getScaledInstance(
+							this.thumbnailWidth, this.thumbnailHeight,
+							Image.SCALE_SMOOTH), 0, 0, null);
+			ImageIO.write(renderedImg, "jpg", thumbnailFile);
+			log.debug("Thumbnail created");
 		}
 	}
 }
