@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.mail.BodyPart;
@@ -37,7 +38,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.apache.velocity.tools.ToolboxFactory;
 import org.apache.velocity.tools.generic.DateTool;
 import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.klco.email2html.models.EmailMessage;
@@ -61,7 +61,7 @@ public class OutputWriter {
 	/** The template. */
 	private Template template;
 
-	private Template indexTemplate;
+	private List<Template> indexTemplates = new ArrayList<Template>();
 
 	/** The Constant log. */
 	private static final Logger log = LoggerFactory
@@ -87,11 +87,15 @@ public class OutputWriter {
 				config.getTemplateDir());
 		Velocity.init();
 
-		log.debug("Initializing template template.vm");
-		template = Velocity.getTemplate("template.vm");
+		log.debug("Initializing template {}", config.getMessageTemplateName());
+		template = Velocity.getTemplate(config.getMessageTemplateName());
 
-		log.debug("Initializing index template: index.vm");
-		indexTemplate = Velocity.getTemplate("index.vm");
+		log.debug("Initializing index templates from: {}",
+				config.getIndexTemplateNames());
+		for (String templateName : config.getIndexTemplateNames().split("\\,")) {
+			log.debug("Initializing index template from: {}", templateName);
+			indexTemplates.add(Velocity.getTemplate(templateName));
+		}
 	}
 
 	/**
@@ -183,11 +187,15 @@ public class OutputWriter {
 		VelocityContext context = new VelocityContext();
 		context.put("messages", messages);
 
-		File messageFile = new File(outputDir.getAbsolutePath()
-				+ File.separator + "index.html");
-		log.debug("Writing message to file {}", messageFile.getAbsolutePath());
-
-		writeHTML(messageFile, context, indexTemplate);
+		for (Template indexTemplate : indexTemplates) {
+			indexTemplate.getName().substring(0,
+					indexTemplate.getName().indexOf(".vm"));
+			File messageFile = new File(outputDir.getAbsolutePath()
+					+ File.separator + "index.html");
+			log.debug("Writing message to file {}",
+					messageFile.getAbsolutePath());
+			writeHTML(messageFile, context, indexTemplate);
+		}
 	}
 
 	/**

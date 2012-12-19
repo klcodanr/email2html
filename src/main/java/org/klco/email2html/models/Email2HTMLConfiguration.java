@@ -21,7 +21,6 @@
  */
 package org.klco.email2html.models;
 
-// TODO: Auto-generated Javadoc
 /**
  * Configures the Email -> HTML process.
  * 
@@ -31,6 +30,12 @@ public class Email2HTMLConfiguration {
 
 	/** The name of the folder to retrieve, defaults to 'Inbox'. */
 	private String folder = "Inbox";
+
+	/** The index template names. */
+	private String indexTemplateNames;
+
+	/** The message template name. */
+	private String messageTemplateName;
 
 	/**
 	 * The output directory to which to save the files, defaults to the current
@@ -73,6 +78,24 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
+	 * Gets the index template names.
+	 *
+	 * @return the index template names
+	 */
+	public String getIndexTemplateNames() {
+		return indexTemplateNames;
+	}
+
+	/**
+	 * Gets the message template name.
+	 *
+	 * @return the message template name
+	 */
+	public String getMessageTemplateName() {
+		return messageTemplateName;
+	}
+
+	/**
 	 * Gets the output dir.
 	 * 
 	 * @return the output dir
@@ -101,7 +124,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Gets the template dir.
-	 *
+	 * 
 	 * @return the template dir
 	 */
 	public String getTemplateDir() {
@@ -137,6 +160,24 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
+	 * Sets the index template names.
+	 *
+	 * @param indexTemplateNames the new index template names
+	 */
+	public void setIndexTemplateNames(String indexTemplateNames) {
+		this.indexTemplateNames = indexTemplateNames;
+	}
+
+	/**
+	 * Sets the message template name.
+	 *
+	 * @param messageTemplateName the new message template name
+	 */
+	public void setMessageTemplateName(String messageTemplateName) {
+		this.messageTemplateName = messageTemplateName;
+	}
+
+	/**
 	 * Sets the output dir.
 	 * 
 	 * @param outputDir
@@ -168,8 +209,9 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the template dir.
-	 *
-	 * @param templateDir the new template dir
+	 * 
+	 * @param templateDir
+	 *            the new template dir
 	 */
 	public void setTemplateDir(String templateDir) {
 		this.templateDir = templateDir;

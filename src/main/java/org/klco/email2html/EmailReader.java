@@ -260,13 +260,19 @@ public class EmailReader {
 							}
 						} else {
 							log.debug("Loading message from body part");
-							emailMessage.setFullMessage(bodyPart.toString());
+							emailMessage.setFullMessage(bodyPart.getContent().toString());
 							emailMessage.setMessage(trimMessage(emailMessage
 									.getFullMessage()));
 						}
 					}
 				}
-			} else {
+			} else if(message.getContent() instanceof MimeBodyPart){
+				log.debug("Loading message from a BodyPart");
+				MimeBodyPart body = (MimeBodyPart) message.getContent();
+				emailMessage.setFullMessage(body.getContent().toString());
+				emailMessage.setMessage(trimMessage(emailMessage
+						.getFullMessage()));
+			}else{
 				log.debug("Loading message from email content");
 				emailMessage.setFullMessage(message.getContent().toString());
 				emailMessage.setMessage(trimMessage(emailMessage

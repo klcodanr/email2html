@@ -31,10 +31,25 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private String templateDir;
 
 	/**
+	 * The name of the template to use for messages.
+	 * 
+	 * @parameter default-value="message.vm"
+	 */
+	private String messageTemplateName;
+
+	/**
+	 * The name(s) of the template(s) to create as 'index' files. These files
+	 * will be passed all of the loaded messages. Comma separate the values.
+	 * 
+	 * @parameter default-value="index.html.vm"
+	 */
+	private String indexTemplateNames;
+
+	/**
 	 * The output directory to which to save the files, defaults to the current
 	 * directory.
 	 * 
-	 * @parameter default-value=""
+	 * @parameter default-value="${basedir}/target"
 	 */
 	private String outputDir;
 
@@ -79,6 +94,8 @@ public class Email2HTMLMojo extends AbstractMojo {
 
 		Email2HTMLConfiguration config = new Email2HTMLConfiguration();
 		config.setFolder(folder);
+		config.setIndexTemplateNames(indexTemplateNames);
+		config.setMessageTemplateName(messageTemplateName);
 		config.setOutputDir(outputDir);
 		config.setPassword(password);
 		config.setSearchSubject(searchSubject);
