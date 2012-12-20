@@ -201,11 +201,11 @@ public class OutputWriter {
 		context.put("messages", messages);
 
 		for (Template indexTemplate : indexTemplates) {
-			indexTemplate.getName().substring(0,
+			String fileName = indexTemplate.getName().substring(0,
 					indexTemplate.getName().indexOf(".vm"));
 			File messageFile = new File(outputDir.getAbsolutePath()
-					+ File.separator + "index.html");
-			log.debug("Writing message to file {}",
+					+ File.separator + fileName);
+			log.debug("Writing index to file {}",
 					messageFile.getAbsolutePath());
 			writeHTML(messageFile, context, indexTemplate);
 		}
