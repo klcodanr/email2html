@@ -20,7 +20,7 @@ public class Email2HTMLMojo extends AbstractMojo {
 	 * 
 	 * @parameter
 	 */
-	private String breakStrings = "<blockquote class=\"gmail_quote,<hr,Sent from my iPhone,Sent from my iPad,Sent from my mobile,Technical details of permanent failure,Forwarded message";
+	private String breakStrings = "<blockquote class=\"gmail_quote,<hr,Sent from my iPhone,Sent from my iPad,Sent from my mobile,Technical details of permanent failure,Forwarded message,<div>On ";
 
 	/**
 	 * The name of the folder to retrieve, defaults to 'Inbox'.
