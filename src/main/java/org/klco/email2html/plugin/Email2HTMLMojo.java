@@ -16,6 +16,13 @@ import org.klco.email2html.models.Email2HTMLConfiguration;
 public class Email2HTMLMojo extends AbstractMojo {
 
 	/**
+	 * Comma separated list of strings which break content from replies.
+	 * 
+	 * @parameter
+	 */
+	private String breakStrings = "<blockquote class=\"gmail_quote,<hr,Sent from my iPhone,Sent from my iPad,Sent from my mobile,Technical details of permanent failure";
+
+	/**
 	 * The name of the folder to retrieve, defaults to 'Inbox'.
 	 * 
 	 * @parameter default-value="Inbox"
@@ -116,6 +123,7 @@ public class Email2HTMLMojo extends AbstractMojo {
 		getLog().info("Execute");
 
 		Email2HTMLConfiguration config = new Email2HTMLConfiguration();
+		config.setBreakStrings(breakStrings);
 		config.setFolder(folder);
 		config.setIndexTemplateNames(indexTemplateNames);
 		config.setMessageTemplateName(messageTemplateName);

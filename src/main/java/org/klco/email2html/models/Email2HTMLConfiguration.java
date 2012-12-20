@@ -28,6 +28,11 @@ package org.klco.email2html.models;
  */
 public class Email2HTMLConfiguration {
 
+	/**
+	 * Strings which break the original message and the replies.
+	 */
+	private String breakStrings;
+
 	/** The name of the folder to retrieve, defaults to 'Inbox'. */
 	private String folder = "Inbox";
 
@@ -81,6 +86,15 @@ public class Email2HTMLConfiguration {
 	private String username;
 
 	/**
+	 * Gets the break strings.
+	 * 
+	 * @return the break strings
+	 */
+	public String getBreakStrings() {
+		return breakStrings;
+	}
+
+	/**
 	 * Get the folder.
 	 * 
 	 * @return the folder
@@ -118,7 +132,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Gets the overwrite.
-	 *
+	 * 
 	 * @return the overwrite
 	 */
 	public String getOverwrite() {
@@ -189,6 +203,16 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
+	 * Sets the break strings.
+	 * 
+	 * @param breakStrings
+	 *            the new break strings
+	 */
+	public void setBreakStrings(String breakStrings) {
+		this.breakStrings = breakStrings;
+	}
+
+	/**
 	 * Sets the folder.
 	 * 
 	 * @param folder
@@ -230,8 +254,9 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the overwrite.
-	 *
-	 * @param overwrite the new overwrite
+	 * 
+	 * @param overwrite
+	 *            the new overwrite
 	 */
 	public void setOverwrite(String overwrite) {
 		this.overwrite = overwrite;

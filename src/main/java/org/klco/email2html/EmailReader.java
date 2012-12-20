@@ -24,6 +24,7 @@ package org.klco.email2html;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -79,6 +80,8 @@ public class EmailReader {
 
 	private boolean overwrite;
 
+	private String[] breakStrings;
+
 	/**
 	 * Instantiates a new email reader.
 	 * 
@@ -88,7 +91,11 @@ public class EmailReader {
 	public EmailReader(Email2HTMLConfiguration config) {
 		this.config = config;
 		outputWriter = new OutputWriter(config);
+
 		overwrite = Boolean.valueOf(config.getOverwrite());
+
+		breakStrings = config.getBreakStrings().split("\\,");
+		log.debug("Using break strings: " + Arrays.toString(breakStrings));
 	}
 
 	/**
@@ -157,14 +164,14 @@ public class EmailReader {
 	 *            the message
 	 * @return the string
 	 */
-	private static String trimMessage(String message) {
+	private String trimMessage(String message) {
 		log.trace("trimMessage");
-		if (message.contains("gmail_quote")) {
-			message = message.substring(0, message.indexOf("gmail_quote") - 12);
-		}
 
-		if (message.contains("<hr")) {
-			message = message.substring(0, message.indexOf("<hr") - 1);
+		for (String breakString : breakStrings) {
+			if (message.contains(breakString)) {
+				message = message.substring(0, message.indexOf(breakString)
+						- breakString.length());
+			}
 		}
 		return message;
 	}
