@@ -193,7 +193,8 @@ public class EmailReader {
 					&& address.getPersonal().trim().length() != 0) {
 				from = address.getPersonal();
 			} else {
-				from = address.getAddress();
+				from = address.getAddress().substring(0,
+						address.getAddress().indexOf("@"));
 			}
 		} catch (Exception e) {
 			log.warn("Unable to get address", e);
