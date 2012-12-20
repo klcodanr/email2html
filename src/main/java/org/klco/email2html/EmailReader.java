@@ -128,7 +128,7 @@ public class EmailReader {
 			List<EmailMessage> sortedMessages = new ArrayList<EmailMessage>();
 			log.debug("Loading messages from the server");
 			for (int i = 0; i < messages.length; i++) {
-				log.info("Processing message {}", i);
+				log.info("Processing message {} of {}", i, messages.length);
 				Message message = messages[i];
 				try {
 					sortedMessages.add(saveMessage(message));
