@@ -58,21 +58,21 @@ public class OutputWriter {
 	private static final SimpleDateFormat FILE_DATE_FORMAT = new SimpleDateFormat(
 			"yyyy-MM-dd-HH-mm-ss");
 
-	/** The output dir. */
-	private File outputDir;
-
-	/** The template. */
-	private Template template;
-
-	private List<Template> indexTemplates = new ArrayList<Template>();
-
 	/** The Constant log. */
 	private static final Logger log = LoggerFactory
 			.getLogger(OutputWriter.class);
 
 	private boolean createThumbnails = true;
-	private int thumbnailWidth;
+
+	private List<Template> indexTemplates = new ArrayList<Template>();
+
+	/** The output dir. */
+	private File outputDir;
+
+	/** The template. */
+	private Template template;
 	private int thumbnailHeight;
+	private int thumbnailWidth;
 
 	/**
 	 * Constructs a new OutputWriter.
@@ -114,6 +114,41 @@ public class OutputWriter {
 	}
 
 	/**
+	 * Adds the attachment to the EmailMessage. Call this method when the email
+	 * content has most likely already been loaded.
+	 * 
+	 * @param containingMessage
+	 *            the Email Message to add the attachment to
+	 * @param bodyPart
+	 *            the content of the attachment
+	 * @throws IOException
+	 * @throws MessagingException
+	 */
+	public void addAttachment(EmailMessage containingMessage, BodyPart bodyPart)
+			throws IOException, MessagingException {
+		log.trace("addAttachment");
+
+		File attachmentFolder = new File(outputDir.getAbsolutePath()
+				+ File.separator
+				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
+		File attachmentFile = new File(attachmentFolder, bodyPart.getFileName());
+		File thumbnailFile = new File(attachmentFolder, "thumbnail-"
+				+ bodyPart.getFileName());
+
+		if (!attachmentFolder.exists() || !attachmentFile.exists()) {
+			log.warn("Attachment or folder missing, writing attachment");
+			this.writeAttachment(containingMessage, bodyPart);
+		} else if (createThumbnails
+				&& bodyPart.getContentType().toLowerCase().startsWith("image")
+				&& !thumbnailFile.exists()) {
+			log.warn("Thumbnail missing, writing attachment");
+			this.writeAttachment(containingMessage, bodyPart);
+		} else {
+			containingMessage.getAttachments().add(attachmentFile);
+		}
+	}
+
+	/**
 	 * Checks to see if a file exists for the specified message.
 	 * 
 	 * @param emailMessage
@@ -125,6 +160,75 @@ public class OutputWriter {
 				+ File.separator
 				+ FILE_DATE_FORMAT.format(emailMessage.getSentDate()) + ".html");
 		return messageFile.exists();
+	}
+
+	/**
+	 * Writes the attachment contained in the body part to a file.
+	 * 
+	 * @param containingMessage
+	 *            the message this body part is contained within
+	 * @param bodyPart
+	 *            the part containing the attachment
+	 * @return the file that was created/written to
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 * @throws MessagingException
+	 *             the messaging exception
+	 */
+	public void writeAttachment(EmailMessage containingMessage,
+			BodyPart bodyPart) throws IOException, MessagingException {
+		log.trace("writeAttachment");
+
+		File attachmentFolder = new File(outputDir.getAbsolutePath()
+				+ File.separator
+				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
+
+		if (!attachmentFolder.exists()) {
+			log.debug("Creating attachment folder");
+			attachmentFolder.mkdirs();
+		}
+		File attachmentFile = new File(attachmentFolder, bodyPart.getFileName());
+		log.debug("Writing attachment file: {}",
+				attachmentFile.getAbsolutePath());
+
+		if (!attachmentFile.exists()) {
+			attachmentFile.createNewFile();
+		}
+		OutputStream os = null;
+		try {
+			log.debug("Writing to file");
+			os = new FileOutputStream(attachmentFile);
+			IOUtils.copy(bodyPart.getInputStream(), os);
+			containingMessage.getAttachments().add(attachmentFile);
+		} finally {
+			IOUtils.closeQuietly(os);
+		}
+		log.debug("Attachement saved");
+
+		if (createThumbnails
+				&& bodyPart.getContentType().toLowerCase().startsWith("image")) {
+			log.debug("Creating thumbnail");
+			String contentType = bodyPart.getContentType().substring(0,
+					bodyPart.getContentType().indexOf(";"));
+			log.debug("Creating thumbnail of type: " + contentType);
+
+			File thumbnailFile = new File(attachmentFolder, "thumbnail-"
+					+ bodyPart.getFileName());
+			if (!thumbnailFile.exists()) {
+				thumbnailFile.createNewFile();
+			}
+			log.debug("Creating thumbnail file: {}",
+					thumbnailFile.getAbsolutePath());
+
+			BufferedImage renderedImg = new BufferedImage(100, 100,
+					BufferedImage.TYPE_INT_RGB);
+			renderedImg.createGraphics().drawImage(
+					ImageIO.read(bodyPart.getInputStream()).getScaledInstance(
+							this.thumbnailWidth, this.thumbnailHeight,
+							Image.SCALE_SMOOTH), 0, 0, null);
+			ImageIO.write(renderedImg, "jpg", thumbnailFile);
+			log.debug("Thumbnail created");
+		}
 	}
 
 	/**
@@ -211,75 +315,6 @@ public class OutputWriter {
 					+ File.separator + fileName);
 			log.debug("Writing index to file {}", messageFile.getAbsolutePath());
 			writeHTML(messageFile, context, indexTemplate);
-		}
-	}
-
-	/**
-	 * Writes the attachment contained in the body part to a file.
-	 * 
-	 * @param containingMessage
-	 *            the message this body part is contained within
-	 * @param bodyPart
-	 *            the part containing the attachment
-	 * @return the file that was created/written to
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 * @throws MessagingException
-	 *             the messaging exception
-	 */
-	public void writeAttachment(EmailMessage containingMessage,
-			BodyPart bodyPart) throws IOException, MessagingException {
-		log.trace("writeAttachment");
-
-		File attachmentFolder = new File(outputDir.getAbsolutePath()
-				+ File.separator
-				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
-
-		if (!attachmentFolder.exists()) {
-			log.debug("Creating attachment folder");
-			attachmentFolder.mkdirs();
-		}
-		File attachmentFile = new File(attachmentFolder, bodyPart.getFileName());
-		log.debug("Writing attachment file: {}",
-				attachmentFile.getAbsolutePath());
-
-		if (!attachmentFile.exists()) {
-			attachmentFile.createNewFile();
-		}
-		OutputStream os = null;
-		try {
-			log.debug("Writing to file");
-			os = new FileOutputStream(attachmentFile);
-			IOUtils.copy(bodyPart.getInputStream(), os);
-			containingMessage.getAttachments().add(attachmentFile);
-		} finally {
-			IOUtils.closeQuietly(os);
-		}
-		log.debug("Attachement saved");
-
-		if (createThumbnails
-				&& bodyPart.getContentType().toLowerCase().startsWith("image")) {
-			log.debug("Creating thumbnail");
-			String contentType = bodyPart.getContentType().substring(0,
-					bodyPart.getContentType().indexOf(";"));
-			log.debug("Creating thumbnail of type: " + contentType);
-
-			File thumbnailFile = new File(attachmentFolder, "thumbnail-"
-					+ bodyPart.getFileName());
-			if (!thumbnailFile.exists()) {
-				thumbnailFile.createNewFile();
-			}
-			log.debug("Creating thumbnail file: {}",
-					thumbnailFile.getAbsolutePath());
-
-			BufferedImage renderedImg = new BufferedImage(100, 100,
-					BufferedImage.TYPE_INT_RGB);
-			renderedImg.createGraphics().drawImage(
-					ImageIO.read(bodyPart.getInputStream()).getScaledInstance(
-							this.thumbnailWidth, this.thumbnailHeight,
-							Image.SCALE_SMOOTH), 0, 0, null);
-			ImageIO.write(renderedImg, "jpg", thumbnailFile);
-			log.debug("Thumbnail created");
 		}
 	}
 }

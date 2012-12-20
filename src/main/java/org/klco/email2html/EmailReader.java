@@ -205,86 +205,86 @@ public class EmailReader {
 		emailMessage.setSender(getSender(message));
 		emailMessage.setSentDate(message.getSentDate());
 
-		if (!outputWriter.fileExists(emailMessage)) {
-			if (message.getContent() instanceof MimeMultipart) {
-				MimeMultipart parts = (MimeMultipart) message.getContent();
-				for (int i = 0; i < parts.getCount(); i++) {
-					BodyPart bodyPart = parts.getBodyPart(i);
+		boolean alreadyExists = outputWriter.fileExists(emailMessage);
+		
+		if (message.getContent() instanceof MimeMultipart) {
+			MimeMultipart parts = (MimeMultipart) message.getContent();
+			for (int i = 0; i < parts.getCount(); i++) {
+				BodyPart bodyPart = parts.getBodyPart(i);
 
-					log.info("Found part: " + bodyPart.getContentType());
+				log.info("Found part: " + bodyPart.getContentType());
 
-					if (bodyPart.getContentType().toUpperCase()
-							.startsWith("IMAGE")) {
+				if (bodyPart.getContentType().toUpperCase().startsWith("IMAGE")) {
+					if(!alreadyExists){
 						outputWriter.writeAttachment(emailMessage, bodyPart);
-					} else {
-						log.debug("Processing message text");
-						if (bodyPart.getContent() instanceof MimeMultipart) {
-							MimeMultipart textParts = (MimeMultipart) bodyPart
-									.getContent();
-							for (int d = 0; d < textParts.getCount(); d++) {
-								BodyPart textPart = textParts.getBodyPart(d);
+					}else{
+						outputWriter.addAttachment(emailMessage, bodyPart);
+					}
+				} else {
+					log.debug("Processing message text");
+					if (bodyPart.getContent() instanceof MimeMultipart) {
+						MimeMultipart textParts = (MimeMultipart) bodyPart
+								.getContent();
+						for (int d = 0; d < textParts.getCount(); d++) {
+							BodyPart textPart = textParts.getBodyPart(d);
 
-								if (textPart.getContentType().toLowerCase()
-										.startsWith("text/html")
-										|| (emailMessage.getMessage() == null && textPart
-												.getContentType().toLowerCase()
-												.startsWith("text/plain"))) {
-									log.debug("Loading message from multi body part");
-									emailMessage
-											.setFullMessage((String) textPart
-													.getContent());
-									emailMessage
-											.setMessage(trimMessage(emailMessage
-													.getFullMessage()));
-
-								} else {
-									log.debug(
-											"Skipping part with content type: {}",
-											textPart.getContentType());
-								}
-							}
-						} else if (bodyPart.getContent() instanceof MimeBodyPart) {
-							MimeBodyPart mimePart = (MimeBodyPart) bodyPart
-									.getContent();
-							if (mimePart.getContentType().toLowerCase()
+							if (textPart.getContentType().toLowerCase()
 									.startsWith("text/html")
-									|| emailMessage.getMessage() == null) {
-								log.debug("Loading message from mime body part");
-								emailMessage.setFullMessage((String) mimePart
+									|| (emailMessage.getMessage() == null && textPart
+											.getContentType().toLowerCase()
+											.startsWith("text/plain"))) {
+								log.debug("Loading message from multi body part");
+								emailMessage.setFullMessage((String) textPart
 										.getContent());
 								emailMessage
 										.setMessage(trimMessage(emailMessage
 												.getFullMessage()));
+
 							} else {
 								log.debug(
 										"Skipping part with content type: {}",
-										mimePart.getContentType());
+										textPart.getContentType());
 							}
-						} else {
-							log.debug("Loading message from body part");
-							emailMessage.setFullMessage(bodyPart.getContent()
-									.toString());
+						}
+					} else if (bodyPart.getContent() instanceof MimeBodyPart) {
+						MimeBodyPart mimePart = (MimeBodyPart) bodyPart
+								.getContent();
+						if (mimePart.getContentType().toLowerCase()
+								.startsWith("text/html")
+								|| emailMessage.getMessage() == null) {
+							log.debug("Loading message from mime body part");
+							emailMessage.setFullMessage((String) mimePart
+									.getContent());
 							emailMessage.setMessage(trimMessage(emailMessage
 									.getFullMessage()));
+						} else {
+							log.debug("Skipping part with content type: {}",
+									mimePart.getContentType());
 						}
+					} else {
+						log.debug("Loading message from body part");
+						emailMessage.setFullMessage(bodyPart.getContent()
+								.toString());
+						emailMessage.setMessage(trimMessage(emailMessage
+								.getFullMessage()));
 					}
 				}
-			} else if (message.getContent() instanceof MimeBodyPart) {
-				log.debug("Loading message from a BodyPart");
-				MimeBodyPart body = (MimeBodyPart) message.getContent();
-				emailMessage.setFullMessage(body.getContent().toString());
-				emailMessage.setMessage(trimMessage(emailMessage
-						.getFullMessage()));
-			} else {
-				log.debug("Loading message from email content");
-				emailMessage.setFullMessage(message.getContent().toString());
-				emailMessage.setMessage(trimMessage(emailMessage
-						.getFullMessage()));
 			}
+		} else if (message.getContent() instanceof MimeBodyPart) {
+			log.debug("Loading message from a BodyPart");
+			MimeBodyPart body = (MimeBodyPart) message.getContent();
+			emailMessage.setFullMessage(body.getContent().toString());
+			emailMessage.setMessage(trimMessage(emailMessage.getFullMessage()));
+		} else {
+			log.debug("Loading message from email content");
+			emailMessage.setFullMessage(message.getContent().toString());
+			emailMessage.setMessage(trimMessage(emailMessage.getFullMessage()));
+		}
 
+		if (!alreadyExists) {
 			outputWriter.writeHTML(emailMessage);
 		} else {
-			log.debug("Message already exists, skipping");
+			log.debug("Message already exists, not writing");
 		}
 		return emailMessage;
 	}
