@@ -168,9 +168,9 @@ public class EmailReader {
 		log.trace("trimMessage");
 
 		for (String breakString : breakStrings) {
-			if (message.contains(breakString)) {
-				message = message.substring(0, message.indexOf(breakString)
-						- breakString.length());
+			int index = message.indexOf(breakString);
+			if (index != -1) {
+				message = message.substring(0, index);
 			}
 		}
 		return message;
