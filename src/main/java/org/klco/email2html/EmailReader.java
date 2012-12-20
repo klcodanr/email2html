@@ -105,7 +105,9 @@ public class EmailReader {
 
 			List<EmailMessage> sortedMessages = new ArrayList<EmailMessage>();
 			log.debug("Loading messages from the server");
-			for (Message message : messages) {
+			for (int i = 0; i < messages.length; i++) {
+				log.info("Processing message {}", i);
+				Message message = messages[i];
 				try {
 					sortedMessages.add(saveMessage(message));
 				} catch (Exception e) {
@@ -260,19 +262,20 @@ public class EmailReader {
 							}
 						} else {
 							log.debug("Loading message from body part");
-							emailMessage.setFullMessage(bodyPart.getContent().toString());
+							emailMessage.setFullMessage(bodyPart.getContent()
+									.toString());
 							emailMessage.setMessage(trimMessage(emailMessage
 									.getFullMessage()));
 						}
 					}
 				}
-			} else if(message.getContent() instanceof MimeBodyPart){
+			} else if (message.getContent() instanceof MimeBodyPart) {
 				log.debug("Loading message from a BodyPart");
 				MimeBodyPart body = (MimeBodyPart) message.getContent();
 				emailMessage.setFullMessage(body.getContent().toString());
 				emailMessage.setMessage(trimMessage(emailMessage
 						.getFullMessage()));
-			}else{
+			} else {
 				log.debug("Loading message from email content");
 				emailMessage.setFullMessage(message.getContent().toString());
 				emailMessage.setMessage(trimMessage(emailMessage

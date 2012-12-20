@@ -84,6 +84,7 @@ public class OutputWriter {
 		log.trace("HTMLWriter");
 
 		outputDir = new File(config.getOutputDir());
+		log.info("Using output directory {}", outputDir.getAbsolutePath());
 		if (!outputDir.exists()) {
 			log.info("Creating ouput directory");
 			outputDir.mkdirs();
@@ -94,10 +95,10 @@ public class OutputWriter {
 				config.getTemplateDir());
 		Velocity.init();
 
-		log.debug("Initializing template {}", config.getMessageTemplateName());
+		log.info("Initializing template {}", config.getMessageTemplateName());
 		template = Velocity.getTemplate(config.getMessageTemplateName());
 
-		log.debug("Initializing index templates from: {}",
+		log.info("Initializing index templates from: {}",
 				config.getIndexTemplateNames());
 		for (String templateName : config.getIndexTemplateNames().split("\\,")) {
 			log.debug("Initializing index template from: {}", templateName);
@@ -107,6 +108,7 @@ public class OutputWriter {
 		thumbnailHeight = Integer.parseInt(config.getThumbnailHeight(), 10);
 		thumbnailWidth = Integer.parseInt(config.getThumbnailWidth(), 10);
 		if (thumbnailHeight == -1 || thumbnailWidth == -1) {
+			log.debug("Not creating thumbnail");
 			createThumbnails = false;
 		}
 	}
@@ -140,7 +142,6 @@ public class OutputWriter {
 		log.debug("Initializing templating context");
 		VelocityContext context = new VelocityContext();
 		context.put("emailMessage", emailMessage);
-		context.put("dateTool", new DateTool());
 
 		File messageFile = new File(outputDir.getAbsolutePath()
 				+ File.separator
@@ -165,6 +166,9 @@ public class OutputWriter {
 	private void writeHTML(File messageFile, VelocityContext context,
 			Template template) throws IOException {
 		log.trace("writeHTML");
+
+		log.debug("Adding tools to context");
+		context.put("dateTool", new DateTool());
 
 		if (!messageFile.exists()) {
 			log.debug("Creating message file");
@@ -205,8 +209,7 @@ public class OutputWriter {
 					indexTemplate.getName().indexOf(".vm"));
 			File messageFile = new File(outputDir.getAbsolutePath()
 					+ File.separator + fileName);
-			log.debug("Writing index to file {}",
-					messageFile.getAbsolutePath());
+			log.debug("Writing index to file {}", messageFile.getAbsolutePath());
 			writeHTML(messageFile, context, indexTemplate);
 		}
 	}
@@ -233,11 +236,12 @@ public class OutputWriter {
 				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
 
 		if (!attachmentFolder.exists()) {
-			log.debug("Creating image folder");
+			log.debug("Creating attachment folder");
 			attachmentFolder.mkdirs();
 		}
-		log.debug("Writing image file: " + bodyPart.getFileName());
 		File attachmentFile = new File(attachmentFolder, bodyPart.getFileName());
+		log.debug("Writing attachment file: {}",
+				attachmentFile.getAbsolutePath());
 
 		if (!attachmentFile.exists()) {
 			attachmentFile.createNewFile();
