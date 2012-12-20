@@ -46,6 +46,13 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private String outputDir;
 
 	/**
+	 * Whether or not to overwrite the existing content.
+	 * 
+	 * @parameter default-value="false"
+	 */
+	private boolean overwrite;
+
+	/**
 	 * The password to use to connect, must be set.
 	 * 
 	 * @parameter
@@ -113,6 +120,7 @@ public class Email2HTMLMojo extends AbstractMojo {
 		config.setIndexTemplateNames(indexTemplateNames);
 		config.setMessageTemplateName(messageTemplateName);
 		config.setOutputDir(outputDir);
+		config.setOverwrite(String.valueOf(overwrite));
 		config.setPassword(password);
 		config.setSearchSubject(searchSubject);
 		config.setTemplateDir(templateDir);

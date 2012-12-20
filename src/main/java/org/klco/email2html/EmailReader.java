@@ -42,6 +42,8 @@ import javax.mail.search.SubjectTerm;
 
 import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.klco.email2html.models.EmailMessage;
+import org.owasp.html.PolicyFactory;
+import org.owasp.html.Sanitizers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +54,16 @@ import org.slf4j.LoggerFactory;
  */
 public class EmailReader {
 
+	/**
+	 * The HTML Sanitizer policy, essentially allows only block level elements,
+	 */
+	private static final PolicyFactory policy = Sanitizers.FORMATTING
+			.and(Sanitizers.BLOCKS).and(Sanitizers.IMAGES)
+			.and(Sanitizers.LINKS);
+
+	/**
+	 * The OutputWriter instance.
+	 */
 	private OutputWriter outputWriter = null;
 
 	/** The Constant log. */
@@ -65,6 +77,8 @@ public class EmailReader {
 	private static final SimpleDateFormat READABLE_DATE_FORMAT = new SimpleDateFormat(
 			"MMM d, yyyy");
 
+	private boolean overwrite;
+
 	/**
 	 * Instantiates a new email reader.
 	 * 
@@ -74,6 +88,7 @@ public class EmailReader {
 	public EmailReader(Email2HTMLConfiguration config) {
 		this.config = config;
 		outputWriter = new OutputWriter(config);
+		overwrite = Boolean.valueOf(config.getOverwrite());
 	}
 
 	/**
@@ -206,7 +221,7 @@ public class EmailReader {
 		emailMessage.setSentDate(message.getSentDate());
 
 		boolean alreadyExists = outputWriter.fileExists(emailMessage);
-		
+
 		if (message.getContent() instanceof MimeMultipart) {
 			MimeMultipart parts = (MimeMultipart) message.getContent();
 			for (int i = 0; i < parts.getCount(); i++) {
@@ -215,9 +230,9 @@ public class EmailReader {
 				log.info("Found part: " + bodyPart.getContentType());
 
 				if (bodyPart.getContentType().toUpperCase().startsWith("IMAGE")) {
-					if(!alreadyExists){
+					if (!alreadyExists) {
 						outputWriter.writeAttachment(emailMessage, bodyPart);
-					}else{
+					} else {
 						outputWriter.addAttachment(emailMessage, bodyPart);
 					}
 				} else {
@@ -236,9 +251,9 @@ public class EmailReader {
 								log.debug("Loading message from multi body part");
 								emailMessage.setFullMessage((String) textPart
 										.getContent());
-								emailMessage
-										.setMessage(trimMessage(emailMessage
-												.getFullMessage()));
+								emailMessage.setMessage(policy
+										.sanitize(trimMessage(emailMessage
+												.getFullMessage())));
 
 							} else {
 								log.debug(
@@ -255,8 +270,9 @@ public class EmailReader {
 							log.debug("Loading message from mime body part");
 							emailMessage.setFullMessage((String) mimePart
 									.getContent());
-							emailMessage.setMessage(trimMessage(emailMessage
-									.getFullMessage()));
+							emailMessage.setMessage(policy
+									.sanitize(trimMessage(emailMessage
+											.getFullMessage())));
 						} else {
 							log.debug("Skipping part with content type: {}",
 									mimePart.getContentType());
@@ -265,8 +281,9 @@ public class EmailReader {
 						log.debug("Loading message from body part");
 						emailMessage.setFullMessage(bodyPart.getContent()
 								.toString());
-						emailMessage.setMessage(trimMessage(emailMessage
-								.getFullMessage()));
+						emailMessage.setMessage(policy
+								.sanitize(trimMessage(emailMessage
+										.getFullMessage())));
 					}
 				}
 			}
@@ -274,14 +291,16 @@ public class EmailReader {
 			log.debug("Loading message from a BodyPart");
 			MimeBodyPart body = (MimeBodyPart) message.getContent();
 			emailMessage.setFullMessage(body.getContent().toString());
-			emailMessage.setMessage(trimMessage(emailMessage.getFullMessage()));
+			emailMessage.setMessage(policy.sanitize(trimMessage(emailMessage
+					.getFullMessage())));
 		} else {
 			log.debug("Loading message from email content");
 			emailMessage.setFullMessage(message.getContent().toString());
-			emailMessage.setMessage(trimMessage(emailMessage.getFullMessage()));
+			emailMessage.setMessage(policy.sanitize(trimMessage(emailMessage
+					.getFullMessage())));
 		}
 
-		if (!alreadyExists) {
+		if (overwrite || !alreadyExists) {
 			outputWriter.writeHTML(emailMessage);
 		} else {
 			log.debug("Message already exists, not writing");

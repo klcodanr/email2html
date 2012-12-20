@@ -44,6 +44,12 @@ public class Email2HTMLConfiguration {
 	private String outputDir;
 
 	/**
+	 * Whether or not to overwrite existing content, should be set to a boolean
+	 * value.
+	 */
+	private String overwrite;
+
+	/**
 	 * The password to use to connect, must be set.
 	 */
 	private String password;
@@ -108,6 +114,15 @@ public class Email2HTMLConfiguration {
 	 */
 	public String getOutputDir() {
 		return outputDir;
+	}
+
+	/**
+	 * Gets the overwrite.
+	 *
+	 * @return the overwrite
+	 */
+	public String getOverwrite() {
+		return overwrite;
 	}
 
 	/**
@@ -211,6 +226,15 @@ public class Email2HTMLConfiguration {
 	 */
 	public void setOutputDir(String outputDir) {
 		this.outputDir = outputDir;
+	}
+
+	/**
+	 * Sets the overwrite.
+	 *
+	 * @param overwrite the new overwrite
+	 */
+	public void setOverwrite(String overwrite) {
+		this.overwrite = overwrite;
 	}
 
 	/**
