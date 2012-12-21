@@ -2,6 +2,8 @@ package org.klco.email2html.plugin;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.settings.Server;
+import org.apache.maven.settings.Settings;
 import org.klco.email2html.EmailReader;
 import org.klco.email2html.models.Email2HTMLConfiguration;
 
@@ -60,19 +62,19 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private boolean overwrite;
 
 	/**
-	 * The password to use to connect, must be set.
-	 * 
-	 * @parameter
-	 * @required
-	 */
-	private String password;
-
-	/**
 	 * The subject of the emails to search for, optional.
 	 * 
 	 * @parameter
 	 */
 	private String searchSubject;
+
+	/**
+	 * The id of the server to retrieve from the settings.xml and use.
+	 * 
+	 * @parameter
+	 * @required
+	 */
+	private String serverId;
 
 	/**
 	 * The path to the folder containing the templates.
@@ -91,14 +93,6 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private int thumbnailHeight;
 
 	/**
-	 * The width to create thumbnails of any image attachments, set as -1 to not
-	 * create thumbnails.
-	 * 
-	 * @parameter default-value="100"
-	 */
-	private int thumbnailWidth;
-
-	/**
 	 * The URL to connect to retrieve the email, must be set.
 	 * 
 	 * @parameter
@@ -107,12 +101,17 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private String url;
 
 	/**
-	 * The username with which to connect, must be set.
+	 * The width to create thumbnails of any image attachments, set as -1 to not
+	 * create thumbnails.
 	 * 
-	 * @parameter
-	 * @required
+	 * @parameter default-value="100"
 	 */
-	private String username;
+	private int thumbnailWidth;
+
+	/**
+	 * @parameter default-value="${settings}"
+	 */
+	private Settings settings;
 
 	/*
 	 * (non-Javadoc)
@@ -122,6 +121,8 @@ public class Email2HTMLMojo extends AbstractMojo {
 	public void execute() throws MojoExecutionException {
 		getLog().info("Execute");
 
+		Server server = settings.getServer(serverId);
+
 		Email2HTMLConfiguration config = new Email2HTMLConfiguration();
 		config.setBreakStrings(breakStrings);
 		config.setFolder(folder);
@@ -129,13 +130,13 @@ public class Email2HTMLMojo extends AbstractMojo {
 		config.setMessageTemplateName(messageTemplateName);
 		config.setOutputDir(outputDir);
 		config.setOverwrite(String.valueOf(overwrite));
-		config.setPassword(password);
+		config.setPassword(server.getPassword());
 		config.setSearchSubject(searchSubject);
 		config.setTemplateDir(templateDir);
 		config.setThumbnailHeight(String.valueOf(thumbnailHeight));
 		config.setThumbnailWidth(String.valueOf(thumbnailWidth));
 		config.setUrl(url);
-		config.setUsername(username);
+		config.setUsername(server.getUsername());
 
 		getLog().info("Starting reader");
 		EmailReader reader = new EmailReader(config);
