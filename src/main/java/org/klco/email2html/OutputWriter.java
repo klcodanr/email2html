@@ -34,8 +34,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
-import javax.mail.BodyPart;
 import javax.mail.MessagingException;
+import javax.mail.Part;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.Template;
@@ -119,30 +119,30 @@ public class OutputWriter {
 	 * 
 	 * @param containingMessage
 	 *            the Email Message to add the attachment to
-	 * @param bodyPart
+	 * @param part
 	 *            the content of the attachment
 	 * @throws IOException
 	 * @throws MessagingException
 	 */
-	public void addAttachment(EmailMessage containingMessage, BodyPart bodyPart)
+	public void addAttachment(EmailMessage containingMessage, Part part)
 			throws IOException, MessagingException {
 		log.trace("addAttachment");
 
 		File attachmentFolder = new File(outputDir.getAbsolutePath()
 				+ File.separator
 				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
-		File attachmentFile = new File(attachmentFolder, bodyPart.getFileName());
+		File attachmentFile = new File(attachmentFolder, part.getFileName());
 		File thumbnailFile = new File(attachmentFolder, "thumbnail-"
-				+ bodyPart.getFileName());
+				+ part.getFileName());
 
 		if (!attachmentFolder.exists() || !attachmentFile.exists()) {
 			log.warn("Attachment or folder missing, writing attachment");
-			this.writeAttachment(containingMessage, bodyPart);
+			this.writeAttachment(containingMessage, part);
 		} else if (createThumbnails
-				&& bodyPart.getContentType().toLowerCase().startsWith("image")
+				&& part.getContentType().toLowerCase().startsWith("image")
 				&& !thumbnailFile.exists()) {
 			log.warn("Thumbnail missing, writing attachment");
-			this.writeAttachment(containingMessage, bodyPart);
+			this.writeAttachment(containingMessage, part);
 		} else {
 			containingMessage.getAttachments().add(attachmentFile);
 		}
@@ -167,7 +167,7 @@ public class OutputWriter {
 	 * 
 	 * @param containingMessage
 	 *            the message this body part is contained within
-	 * @param bodyPart
+	 * @param part
 	 *            the part containing the attachment
 	 * @return the file that was created/written to
 	 * @throws IOException
@@ -175,8 +175,8 @@ public class OutputWriter {
 	 * @throws MessagingException
 	 *             the messaging exception
 	 */
-	public void writeAttachment(EmailMessage containingMessage,
-			BodyPart bodyPart) throws IOException, MessagingException {
+	public void writeAttachment(EmailMessage containingMessage, Part part)
+			throws IOException, MessagingException {
 		log.trace("writeAttachment");
 
 		File attachmentFolder = new File(outputDir.getAbsolutePath()
@@ -187,7 +187,7 @@ public class OutputWriter {
 			log.debug("Creating attachment folder");
 			attachmentFolder.mkdirs();
 		}
-		File attachmentFile = new File(attachmentFolder, bodyPart.getFileName());
+		File attachmentFile = new File(attachmentFolder, part.getFileName());
 		log.debug("Writing attachment file: {}",
 				attachmentFile.getAbsolutePath());
 
@@ -198,7 +198,7 @@ public class OutputWriter {
 		try {
 			log.debug("Writing to file");
 			os = new FileOutputStream(attachmentFile);
-			IOUtils.copy(bodyPart.getInputStream(), os);
+			IOUtils.copy(part.getInputStream(), os);
 			containingMessage.getAttachments().add(attachmentFile);
 		} finally {
 			IOUtils.closeQuietly(os);
@@ -206,14 +206,14 @@ public class OutputWriter {
 		log.debug("Attachement saved");
 
 		if (createThumbnails
-				&& bodyPart.getContentType().toLowerCase().startsWith("image")) {
+				&& part.getContentType().toLowerCase().startsWith("image")) {
 			log.debug("Creating thumbnail");
-			String contentType = bodyPart.getContentType().substring(0,
-					bodyPart.getContentType().indexOf(";"));
+			String contentType = part.getContentType().substring(0,
+					part.getContentType().indexOf(";"));
 			log.debug("Creating thumbnail of type: " + contentType);
 
 			File thumbnailFile = new File(attachmentFolder, "thumbnail-"
-					+ bodyPart.getFileName());
+					+ part.getFileName());
 			if (!thumbnailFile.exists()) {
 				thumbnailFile.createNewFile();
 			}
@@ -223,7 +223,7 @@ public class OutputWriter {
 			BufferedImage renderedImg = new BufferedImage(100, 100,
 					BufferedImage.TYPE_INT_RGB);
 			renderedImg.createGraphics().drawImage(
-					ImageIO.read(bodyPart.getInputStream()).getScaledInstance(
+					ImageIO.read(part.getInputStream()).getScaledInstance(
 							this.thumbnailWidth, this.thumbnailHeight,
 							Image.SCALE_SMOOTH), 0, 0, null);
 			ImageIO.write(renderedImg, "jpg", thumbnailFile);

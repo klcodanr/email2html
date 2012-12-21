@@ -34,11 +34,13 @@ import javax.mail.BodyPart;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
+import javax.mail.Part;
 import javax.mail.Session;
 import javax.mail.Store;
+import javax.mail.internet.ContentType;
 import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMultipart;
+import javax.mail.internet.ParseException;
 import javax.mail.search.SubjectTerm;
 
 import org.klco.email2html.models.Email2HTMLConfiguration;
@@ -54,6 +56,41 @@ import org.slf4j.LoggerFactory;
  * @author dklco
  */
 public class EmailReader {
+
+	/**
+	 * Constant for application content types.
+	 */
+	public static final String CT_PT_APPLICATION = "application";
+
+	/**
+	 * Constant for audio content types.
+	 */
+	public static final String CT_PT_AUDIO = "audio";
+
+	/**
+	 * Constant for image content types.
+	 */
+	public static final String CT_PT_IMAGE = "image";
+
+	/**
+	 * Constant for multipart content types.
+	 */
+	public static final String CT_PT_MULTIPART = "multipart";
+
+	/**
+	 * Constant for text content types.
+	 */
+	public static final String CT_PT_TEXT = "text";
+
+	/**
+	 * Constant for video content types.
+	 */
+	public static final String CT_PT_VIDEO = "video";
+
+	/**
+	 * Constant for HTML secondary content type.
+	 */
+	public static final String CT_ST_HTML = "html";
 
 	/** The Constant log. */
 	private static final Logger log = LoggerFactory
@@ -122,6 +159,92 @@ public class EmailReader {
 
 		breakStrings = config.getBreakStrings().split("\\,");
 		log.debug("Using break strings: " + Arrays.toString(breakStrings));
+	}
+
+	/**
+	 * Handles multiparts, will iterate through all the parts and attempt to
+	 * retrieve the message contents.
+	 * 
+	 * @param message
+	 *            the email message object
+	 * @param multipart
+	 *            the multipart container
+	 * @throws MessagingException
+	 */
+	private void getMessageContent(EmailMessage message, Multipart multipart)
+			throws MessagingException {
+		log.trace("getMessageContent(Multipart)");
+		for (int i = 0; i < multipart.getCount(); i++) {
+			BodyPart bodyPart = multipart.getBodyPart(i);
+			try {
+				getMessageContent(message, bodyPart);
+			} catch (Exception e) {
+				log.warn("Exception processing part " + i + "of type "
+						+ bodyPart.getContentType(), e);
+			}
+		}
+
+	}
+
+	/**
+	 * Handles the individual parts, attempts to figure out what each part is
+	 * and handle it appropriately.
+	 * 
+	 * @param message
+	 *            the message object to populate
+	 * @param part
+	 *            the current message part
+	 * @throws ParseException
+	 * @throws MessagingException
+	 * @throws IOException
+	 */
+	private void getMessageContent(EmailMessage message, Part part)
+			throws ParseException, MessagingException, IOException {
+		log.trace("getMessageContent(Part)");
+		ContentType contentType = new ContentType(part.getContentType());
+
+		log.debug("Processing part of primary type {} and sub type {}",
+				contentType.getPrimaryType(), contentType.getSubType());
+		if (CT_PT_TEXT.equalsIgnoreCase(contentType.getPrimaryType())) {
+			log.debug("Processing text part");
+			getText(message, part);
+		}  else if (CT_PT_MULTIPART.equalsIgnoreCase(contentType.getPrimaryType())) {
+			log.debug("Handling multipart");
+			getMessageContent(message, (Multipart) part.getContent());
+		} else if (CT_PT_IMAGE.equalsIgnoreCase(contentType.getPrimaryType())
+				|| CT_PT_VIDEO.equalsIgnoreCase(contentType.getPrimaryType())
+				|| CT_PT_AUDIO.equalsIgnoreCase(contentType.getPrimaryType())
+				|| CT_PT_APPLICATION.equalsIgnoreCase(contentType.getPrimaryType())) {
+			log.debug("Handling attachment");
+			outputWriter.addAttachment(message, part);
+		}else {
+			log.warn("Unexpected primary type {} for content type {}",
+					contentType.getPrimaryType(), part.getContentType());
+		}
+	}
+
+	/**
+	 * Get the text from the part.
+	 * 
+	 * @param message
+	 *            the message to update
+	 * @param part
+	 *            the part from which to retrieve the text
+	 * @throws ParseException
+	 * @throws MessagingException
+	 * @throws IOException
+	 */
+	private void getText(EmailMessage message, Part part)
+			throws ParseException, MessagingException, IOException {
+		log.trace("getText");
+		ContentType contentType = new ContentType(part.getContentType());
+		if (message.getFullMessage() == null
+				|| CT_ST_HTML.equalsIgnoreCase(contentType.getSubType())) {
+			log.debug("Loading text of type: {}", contentType.getSubType());
+			message.setFullMessage(part.getContent().toString());
+			message.setMessage(policy.sanitize(trimMessage(message
+					.getFullMessage())));
+		}
 	}
 
 	/**
@@ -211,95 +334,11 @@ public class EmailReader {
 		emailMessage.setSender(getSender(message));
 		emailMessage.setSentDate(message.getSentDate());
 
+		log.debug("Loading message content");
+
+		getMessageContent(emailMessage, message);
+
 		boolean alreadyExists = outputWriter.fileExists(emailMessage);
-
-		if (message.getContent() instanceof MimeMultipart) {
-			MimeMultipart parts = (MimeMultipart) message.getContent();
-			for (int i = 0; i < parts.getCount(); i++) {
-				BodyPart bodyPart = parts.getBodyPart(i);
-				try {
-
-					log.info("Found part: " + bodyPart.getContentType());
-
-					if (bodyPart.getContentType().toUpperCase()
-							.startsWith("IMAGE")) {
-						if (!alreadyExists) {
-							outputWriter
-									.writeAttachment(emailMessage, bodyPart);
-						} else {
-							outputWriter.addAttachment(emailMessage, bodyPart);
-						}
-					} else {
-						log.debug("Processing message text");
-						if (bodyPart.getContent() instanceof MimeMultipart) {
-							MimeMultipart textParts = (MimeMultipart) bodyPart
-									.getContent();
-							for (int d = 0; d < textParts.getCount(); d++) {
-								BodyPart textPart = textParts.getBodyPart(d);
-
-								if (textPart.getContentType().toLowerCase()
-										.startsWith("text/html")
-										|| (emailMessage.getMessage() == null && textPart
-												.getContentType().toLowerCase()
-												.startsWith("text/plain"))) {
-									log.debug("Loading message from multi body part");
-									emailMessage
-											.setFullMessage((String) textPart
-													.getContent());
-									emailMessage.setMessage(policy
-											.sanitize(trimMessage(emailMessage
-													.getFullMessage())));
-
-								} else {
-									log.debug(
-											"Skipping part with content type: {}",
-											textPart.getContentType());
-								}
-							}
-						} else if (bodyPart.getContent() instanceof MimeBodyPart) {
-							MimeBodyPart mimePart = (MimeBodyPart) bodyPart
-									.getContent();
-							if (mimePart.getContentType().toLowerCase()
-									.startsWith("text/html")
-									|| emailMessage.getMessage() == null) {
-								log.debug("Loading message from mime body part");
-								emailMessage.setFullMessage((String) mimePart
-										.getContent());
-								emailMessage.setMessage(policy
-										.sanitize(trimMessage(emailMessage
-												.getFullMessage())));
-							} else {
-								log.debug(
-										"Skipping part with content type: {}",
-										mimePart.getContentType());
-							}
-						} else {
-							log.debug("Loading message from body part");
-							emailMessage.setFullMessage(bodyPart.getContent()
-									.toString());
-							emailMessage.setMessage(policy
-									.sanitize(trimMessage(emailMessage
-											.getFullMessage())));
-						}
-					}
-				} catch (Exception e) {
-					log.warn("Unable to process part " + bodyPart
-							+ " due to exception " + e.toString(), e);
-				}
-			}
-		} else if (message.getContent() instanceof MimeBodyPart) {
-			log.debug("Loading message from a BodyPart");
-			MimeBodyPart body = (MimeBodyPart) message.getContent();
-			emailMessage.setFullMessage(body.getContent().toString());
-			emailMessage.setMessage(policy.sanitize(trimMessage(emailMessage
-					.getFullMessage())));
-		} else {
-			log.debug("Loading message from email content");
-			emailMessage.setFullMessage(message.getContent().toString());
-			emailMessage.setMessage(policy.sanitize(trimMessage(emailMessage
-					.getFullMessage())));
-		}
-
 		if (overwrite || !alreadyExists) {
 			outputWriter.writeHTML(emailMessage);
 		} else {
