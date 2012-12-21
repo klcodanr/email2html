@@ -1,9 +1,14 @@
 package org.klco.email2html.plugin;
 
+import java.util.ArrayList;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
+import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
+import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
 import org.klco.email2html.EmailReader;
 import org.klco.email2html.models.Email2HTMLConfiguration;
 
@@ -113,6 +118,14 @@ public class Email2HTMLMojo extends AbstractMojo {
 	 */
 	private Settings settings;
 
+	/**
+	 * Allows me to decrypt passwords.
+	 * 
+	 * @component role= "org.apache.maven.settings.crypto.SettingsDecrypter"
+	 * @required
+	 */
+	private SettingsDecrypter settingsDecrypter;
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -121,7 +134,7 @@ public class Email2HTMLMojo extends AbstractMojo {
 	public void execute() throws MojoExecutionException {
 		getLog().info("Execute");
 
-		Server server = settings.getServer(serverId);
+		final Server server = settings.getServer(serverId);
 
 		Email2HTMLConfiguration config = new Email2HTMLConfiguration();
 		config.setBreakStrings(breakStrings);
@@ -130,7 +143,16 @@ public class Email2HTMLMojo extends AbstractMojo {
 		config.setMessageTemplateName(messageTemplateName);
 		config.setOutputDir(outputDir);
 		config.setOverwrite(String.valueOf(overwrite));
-		config.setPassword(server.getPassword());
+		SettingsDecryptionRequest request = new DefaultSettingsDecryptionRequest();
+		request.setServers(new ArrayList<Server>() {
+			private static final long serialVersionUID = 1L;
+			{
+				add(server);
+			}
+		});
+		String password = settingsDecrypter.decrypt(request).getServer()
+				.getPassword();
+		config.setPassword(password);
 		config.setSearchSubject(searchSubject);
 		config.setTemplateDir(templateDir);
 		config.setThumbnailHeight(String.valueOf(thumbnailHeight));

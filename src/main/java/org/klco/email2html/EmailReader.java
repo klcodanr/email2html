@@ -55,6 +55,10 @@ import org.slf4j.LoggerFactory;
  */
 public class EmailReader {
 
+	/** The Constant log. */
+	private static final Logger log = LoggerFactory
+			.getLogger(EmailReader.class);
+
 	/**
 	 * The HTML Sanitizer policy, essentially allows only block level elements,
 	 */
@@ -62,25 +66,47 @@ public class EmailReader {
 			.and(Sanitizers.BLOCKS).and(Sanitizers.IMAGES)
 			.and(Sanitizers.LINKS);
 
+	/** The Constant READABLE_DATE_FORMAT. */
+	private static final SimpleDateFormat READABLE_DATE_FORMAT = new SimpleDateFormat(
+			"MMM d, yyyy");
+
+	/**
+	 * Gets the sender.
+	 * 
+	 * @param message
+	 *            the message
+	 * @return the sender
+	 */
+	private static String getSender(Message message) {
+		log.trace("getSender");
+		String from = "";
+		try {
+			log.debug("Getting sender");
+			InternetAddress address = (InternetAddress) message.getFrom()[0];
+			if (address.getPersonal() != null
+					&& address.getPersonal().trim().length() != 0) {
+				from = address.getPersonal();
+			} else {
+				from = address.getAddress().substring(0,
+						address.getAddress().indexOf("@"));
+			}
+		} catch (Exception e) {
+			log.warn("Unable to get address", e);
+		}
+		return from;
+	}
+
+	private String[] breakStrings;
+
+	/** The config. */
+	private Email2HTMLConfiguration config;
+
 	/**
 	 * The OutputWriter instance.
 	 */
 	private OutputWriter outputWriter = null;
 
-	/** The Constant log. */
-	private static final Logger log = LoggerFactory
-			.getLogger(EmailReader.class);
-
-	/** The config. */
-	private Email2HTMLConfiguration config;
-
-	/** The Constant READABLE_DATE_FORMAT. */
-	private static final SimpleDateFormat READABLE_DATE_FORMAT = new SimpleDateFormat(
-			"MMM d, yyyy");
-
 	private boolean overwrite;
-
-	private String[] breakStrings;
 
 	/**
 	 * Instantiates a new email reader.
@@ -109,6 +135,8 @@ public class EmailReader {
 
 			Session session = Session.getDefaultInstance(props, null);
 			Store store = session.getStore("imaps");
+			log.info("Connecting to {} with user {}", config.getUrl(),
+					config.getUsername());
 			store.connect(config.getUrl(), config.getUsername(),
 					config.getPassword());
 			Folder folder = store.getFolder(config.getFolder());
@@ -155,51 +183,6 @@ public class EmailReader {
 		} catch (IOException e) {
 			log.error("IOException accessing emails", e);
 		}
-	}
-
-	/**
-	 * Trim message.
-	 * 
-	 * @param message
-	 *            the message
-	 * @return the string
-	 */
-	private String trimMessage(String message) {
-		log.trace("trimMessage");
-
-		for (String breakString : breakStrings) {
-			int index = message.indexOf(breakString);
-			if (index != -1) {
-				message = message.substring(0, index);
-			}
-		}
-		return message;
-	}
-
-	/**
-	 * Gets the sender.
-	 * 
-	 * @param message
-	 *            the message
-	 * @return the sender
-	 */
-	private static String getSender(Message message) {
-		log.trace("getSender");
-		String from = "";
-		try {
-			log.debug("Getting sender");
-			InternetAddress address = (InternetAddress) message.getFrom()[0];
-			if (address.getPersonal() != null
-					&& address.getPersonal().trim().length() != 0) {
-				from = address.getPersonal();
-			} else {
-				from = address.getAddress().substring(0,
-						address.getAddress().indexOf("@"));
-			}
-		} catch (Exception e) {
-			log.warn("Unable to get address", e);
-		}
-		return from;
 	}
 
 	/**
@@ -323,5 +306,24 @@ public class EmailReader {
 			log.debug("Message already exists, not writing");
 		}
 		return emailMessage;
+	}
+
+	/**
+	 * Trim message.
+	 * 
+	 * @param message
+	 *            the message
+	 * @return the string
+	 */
+	private String trimMessage(String message) {
+		log.trace("trimMessage");
+
+		for (String breakString : breakStrings) {
+			int index = message.indexOf(breakString);
+			if (index != -1) {
+				message = message.substring(0, index);
+			}
+		}
+		return message;
 	}
 }
