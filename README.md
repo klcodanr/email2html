@@ -78,7 +78,7 @@ The Email2HTML Maven plugin takes the following configuration values:
 Templates 
 ----------
 
-Email2HTML uses [Apache Velocity](http://velocity.apache.org/).  All templates will be passed an instance of the velocity [DateTool](http://velocity.apache.org/tools/devel/javadoc/org/apache/velocity/tools/generic/DateTool.html).  Two different types of templates are available:
+Email2HTML uses [Apache Velocity](http://velocity.apache.org/).  All templates will be passed an instance of the velocity [DateTool](http://velocity.apache.org/tools/devel/javadoc/org/apache/velocity/tools/generic/DateTool.html)  The names of the files and image folders can be derived from the sentDate in the format *yyyy-MM-dd-HH-mm-ss*.  Two different types of templates are available:
 
 **Message Template**
 
