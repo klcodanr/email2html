@@ -21,6 +21,7 @@
  */
 package org.klco.email2html;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -40,8 +41,10 @@ import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.mail.internet.ParseException;
 import javax.mail.search.SubjectTerm;
+import javax.mail.util.SharedByteArrayInputStream;
 
 import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.klco.email2html.models.EmailMessage;
@@ -208,16 +211,18 @@ public class EmailReader {
 		if (CT_PT_TEXT.equalsIgnoreCase(contentType.getPrimaryType())) {
 			log.debug("Processing text part");
 			getText(message, part);
-		}  else if (CT_PT_MULTIPART.equalsIgnoreCase(contentType.getPrimaryType())) {
+		} else if (CT_PT_MULTIPART.equalsIgnoreCase(contentType
+				.getPrimaryType())) {
 			log.debug("Handling multipart");
 			getMessageContent(message, (Multipart) part.getContent());
 		} else if (CT_PT_IMAGE.equalsIgnoreCase(contentType.getPrimaryType())
 				|| CT_PT_VIDEO.equalsIgnoreCase(contentType.getPrimaryType())
 				|| CT_PT_AUDIO.equalsIgnoreCase(contentType.getPrimaryType())
-				|| CT_PT_APPLICATION.equalsIgnoreCase(contentType.getPrimaryType())) {
+				|| CT_PT_APPLICATION.equalsIgnoreCase(contentType
+						.getPrimaryType())) {
 			log.debug("Handling attachment");
 			outputWriter.addAttachment(message, part);
-		}else {
+		} else {
 			log.warn("Unexpected primary type {} for content type {}",
 					contentType.getPrimaryType(), part.getContentType());
 		}
@@ -282,7 +287,7 @@ public class EmailReader {
 				log.info("Processing message {} of {}", i, messages.length);
 				Message message = messages[i];
 				try {
-					sortedMessages.add(saveMessage(message));
+					sortedMessages.add(saveMessage(session, message));
 				} catch (Exception e) {
 					log.error(
 							"Exception saving message: "
@@ -322,8 +327,8 @@ public class EmailReader {
 	 * @throws MessagingException
 	 *             the messaging exception
 	 */
-	private EmailMessage saveMessage(Message message) throws IOException,
-			MessagingException {
+	private EmailMessage saveMessage(Session session, Message message)
+			throws IOException, MessagingException {
 		log.trace("saveMessage");
 
 		log.debug("Processing message from: " + message.getSentDate());
@@ -335,8 +340,24 @@ public class EmailReader {
 		emailMessage.setSentDate(message.getSentDate());
 
 		log.debug("Loading message content");
-
-		getMessageContent(emailMessage, message);
+		try {
+			getMessageContent(emailMessage, message);
+		} catch (MessagingException me) {
+			log.warn(
+					"Encountered messaging exception attempting to get message content"
+							+ me, me);
+			
+			log.debug("Attempting to re-parse message");
+			MimeMessage msg = (MimeMessage) message;
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			msg.writeTo(bos);
+			bos.close();
+			SharedByteArrayInputStream bis = new SharedByteArrayInputStream(
+					bos.toByteArray());
+			MimeMessage clonedMessage = new MimeMessage(session, bis);
+			bis.close();
+			getMessageContent(emailMessage, clonedMessage);
+		}
 
 		boolean alreadyExists = outputWriter.fileExists(emailMessage);
 		if (overwrite || !alreadyExists) {
