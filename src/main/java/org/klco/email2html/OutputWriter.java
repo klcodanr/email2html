@@ -225,7 +225,8 @@ public class OutputWriter {
 						.size(rendition.getWidth(), rendition.getHeight())
 						.addFilter(
 								new Canvas(150, 150, Positions.CENTER,
-										Color.white)).toFile(renditionFile);
+										new Color(rendition.getFill())))
+						.toFile(renditionFile);
 				log.debug("Rendition created");
 			}
 		}

@@ -5,8 +5,8 @@ package org.klco.email2html.plugin;
  */
 public class Rendition {
 
-	/** The fill. */
-	private int fill;
+	/** The fill, set to white by default. */
+	private int fill = 255255255;
 
 	/** The height. */
 	private int height;
