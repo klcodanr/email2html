@@ -230,8 +230,9 @@ public class OutputWriter {
 											.getHeight(), Positions.CENTER,
 											Color.WHITE)).toFile(renditionFile);
 				} else {
-					Thumbnails.of(part.getInputStream()).size(
-							rendition.getWidth(), rendition.getHeight());
+					Thumbnails.of(part.getInputStream())
+							.size(rendition.getWidth(), rendition.getHeight())
+							.toFile(renditionFile);
 				}
 				log.debug("Rendition created");
 			}
