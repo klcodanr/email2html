@@ -213,8 +213,8 @@ public class OutputWriter {
 			log.debug("Creating renditions of type: " + contentType);
 
 			for (Rendition rendition : renditions) {
-				File renditionFile = new File(attachmentFolder, "rendition-"
-						+ part.getFileName());
+				File renditionFile = new File(attachmentFolder,
+						rendition.getName() + "-" + part.getFileName());
 				if (!renditionFile.exists()) {
 					renditionFile.createNewFile();
 				}
@@ -224,7 +224,8 @@ public class OutputWriter {
 						.of(part.getInputStream())
 						.size(rendition.getWidth(), rendition.getHeight())
 						.addFilter(
-								new Canvas(150, 150, Positions.CENTER,
+								new Canvas(rendition.getWidth(), rendition
+										.getHeight(), Positions.CENTER,
 										new Color(rendition.getFill())))
 						.toFile(renditionFile);
 				log.debug("Rendition created");
