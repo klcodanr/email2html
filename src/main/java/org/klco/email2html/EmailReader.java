@@ -158,7 +158,7 @@ public class EmailReader {
 		this.config = config;
 		outputWriter = new OutputWriter(config);
 
-		overwrite = Boolean.valueOf(config.getOverwrite());
+		overwrite = config.getOverwrite();
 
 		breakStrings = config.getBreakStrings().split("\\,");
 		log.debug("Using break strings: " + Arrays.toString(breakStrings));
@@ -346,7 +346,7 @@ public class EmailReader {
 			log.warn(
 					"Encountered messaging exception attempting to get message content"
 							+ me, me);
-			
+
 			log.debug("Attempting to re-parse message");
 			MimeMessage msg = (MimeMessage) message;
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();

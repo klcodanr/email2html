@@ -22,9 +22,11 @@
 package org.klco.email2html.utils;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.klco.email2html.models.Email2HTMLConfiguration;
+import org.klco.email2html.plugin.Rendition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,15 +36,16 @@ import org.slf4j.LoggerFactory;
  * @author dklco
  */
 public class ConfigurationUtils {
-	
+
 	/** The Constant log. */
 	private static final Logger log = LoggerFactory
 			.getLogger(ConfigurationUtils.class);
 
 	/**
 	 * Load properties.
-	 *
-	 * @param props the props
+	 * 
+	 * @param props
+	 *            the props
 	 * @return the email2 html configuration
 	 */
 	public static Email2HTMLConfiguration loadProperties(Properties props) {
@@ -53,11 +56,27 @@ public class ConfigurationUtils {
 			Field field = null;
 			try {
 				field = config.getClass().getDeclaredField(key.toString());
-
 				String value = props.getProperty(key.toString());
-				log.info("Setting property {} to value {}", key, value);
-				field.setAccessible(true);
-				field.set(config, value);
+				if (field.getName().equals("renditions")) {
+					String[] renditionStrs = value.split("\\,");
+					Rendition[] renditions = new Rendition[renditionStrs.length];
+					for (int i = 0; i < renditionStrs.length; i++) {
+						renditions[i] = Rendition.parse(renditionStrs[i]);
+					}
+					log.info("Setting property {} to value {}", key, Arrays.toString(renditions));
+					field.setAccessible(true);
+					field.set(config, renditions);
+				}else if(field.getName().equals("overwrite")){
+					Boolean overwrite = Boolean.valueOf(value); 
+					log.info("Setting property {} to value {}", key, overwrite);
+					field.setAccessible(true);
+					field.set(config, overwrite);
+				}else {
+					log.info("Setting property {} to value {}", key, value);
+					field.setAccessible(true);
+					field.set(config, value);
+				}
+
 			} catch (SecurityException e) {
 				log.warn("Exception getting field for property " + key, e);
 			} catch (NoSuchFieldException e) {

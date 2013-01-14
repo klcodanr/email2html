@@ -67,6 +67,14 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private boolean overwrite;
 
 	/**
+	 * The rendition images to create, should be in the format 
+	 * 
+	 * @parameter
+	 * @required
+	 */
+    private Rendition[] renditions;
+	
+	/**
 	 * The subject of the emails to search for, optional.
 	 * 
 	 * @parameter
@@ -82,6 +90,19 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private String serverId;
 
 	/**
+	 * @parameter default-value="${settings}"
+	 */
+	private Settings settings;
+	
+	/**
+	 * Allows me to decrypt passwords.
+	 * 
+	 * @component role= "org.apache.maven.settings.crypto.SettingsDecrypter"
+	 * @required
+	 */
+	private SettingsDecrypter settingsDecrypter;
+
+	/**
 	 * The path to the folder containing the templates.
 	 * 
 	 * @parameter
@@ -90,41 +111,12 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private String templateDir;
 
 	/**
-	 * The height to create thumbnails of any image attachments, set as -1 to
-	 * not create thumbnails.
-	 * 
-	 * @parameter default-value="100"
-	 */
-	private int thumbnailHeight;
-
-	/**
 	 * The URL to connect to retrieve the email, must be set.
 	 * 
 	 * @parameter
 	 * @required
 	 */
 	private String url;
-
-	/**
-	 * The width to create thumbnails of any image attachments, set as -1 to not
-	 * create thumbnails.
-	 * 
-	 * @parameter default-value="100"
-	 */
-	private int thumbnailWidth;
-
-	/**
-	 * @parameter default-value="${settings}"
-	 */
-	private Settings settings;
-
-	/**
-	 * Allows me to decrypt passwords.
-	 * 
-	 * @component role= "org.apache.maven.settings.crypto.SettingsDecrypter"
-	 * @required
-	 */
-	private SettingsDecrypter settingsDecrypter;
 
 	/*
 	 * (non-Javadoc)
@@ -142,7 +134,7 @@ public class Email2HTMLMojo extends AbstractMojo {
 		config.setIndexTemplateNames(indexTemplateNames);
 		config.setMessageTemplateName(messageTemplateName);
 		config.setOutputDir(outputDir);
-		config.setOverwrite(String.valueOf(overwrite));
+		config.setOverwrite(overwrite);
 		SettingsDecryptionRequest request = new DefaultSettingsDecryptionRequest();
 		request.setServers(new ArrayList<Server>() {
 			private static final long serialVersionUID = 1L;
@@ -153,10 +145,9 @@ public class Email2HTMLMojo extends AbstractMojo {
 		String password = settingsDecrypter.decrypt(request).getServer()
 				.getPassword();
 		config.setPassword(password);
+		config.setRenditions(renditions);
 		config.setSearchSubject(searchSubject);
 		config.setTemplateDir(templateDir);
-		config.setThumbnailHeight(String.valueOf(thumbnailHeight));
-		config.setThumbnailWidth(String.valueOf(thumbnailWidth));
 		config.setUrl(url);
 		config.setUsername(server.getUsername());
 

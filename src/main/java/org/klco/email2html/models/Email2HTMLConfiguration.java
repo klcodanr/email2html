@@ -21,6 +21,8 @@
  */
 package org.klco.email2html.models;
 
+import org.klco.email2html.plugin.Rendition;
+
 /**
  * Configures the Email -> HTML process.
  * 
@@ -49,15 +51,19 @@ public class Email2HTMLConfiguration {
 	private String outputDir;
 
 	/**
-	 * Whether or not to overwrite existing content, should be set to a boolean
-	 * value.
+	 * Whether or not to overwrite existing content.
 	 */
-	private String overwrite;
+	private boolean overwrite;
 
 	/**
 	 * The password to use to connect, must be set.
 	 */
 	private String password;
+
+	/**
+	 * The image renditons to be created.
+	 */
+	private Rendition[] renditions;
 
 	/**
 	 * The subject of the emails to search for, optional.
@@ -68,12 +74,6 @@ public class Email2HTMLConfiguration {
 	 * The path to the folder containing the Velocity templates, must be set.
 	 */
 	private String templateDir;
-
-	/** The thumbnail height. */
-	private String thumbnailHeight;
-
-	/** The thumbnail width. */
-	private String thumbnailWidth;
 
 	/**
 	 * The URL to connect to retrieve the email.
@@ -135,7 +135,7 @@ public class Email2HTMLConfiguration {
 	 * 
 	 * @return the overwrite
 	 */
-	public String getOverwrite() {
+	public boolean getOverwrite() {
 		return overwrite;
 	}
 
@@ -146,6 +146,15 @@ public class Email2HTMLConfiguration {
 	 */
 	public String getPassword() {
 		return password;
+	}
+
+	/**
+	 * Gets the renditions.
+	 *
+	 * @return the renditions
+	 */
+	public Rendition[] getRenditions() {
+		return renditions;
 	}
 
 	/**
@@ -164,24 +173,6 @@ public class Email2HTMLConfiguration {
 	 */
 	public String getTemplateDir() {
 		return templateDir;
-	}
-
-	/**
-	 * Gets the thumbnail height.
-	 * 
-	 * @return the thumbnail height
-	 */
-	public String getThumbnailHeight() {
-		return thumbnailHeight;
-	}
-
-	/**
-	 * Gets the thumbnail width.
-	 * 
-	 * @return the thumbnail width
-	 */
-	public String getThumbnailWidth() {
-		return thumbnailWidth;
 	}
 
 	/**
@@ -258,7 +249,7 @@ public class Email2HTMLConfiguration {
 	 * @param overwrite
 	 *            the new overwrite
 	 */
-	public void setOverwrite(String overwrite) {
+	public void setOverwrite(boolean overwrite) {
 		this.overwrite = overwrite;
 	}
 
@@ -270,6 +261,15 @@ public class Email2HTMLConfiguration {
 	 */
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+	/**
+	 * Sets the renditions.
+	 *
+	 * @param renditions the new renditions
+	 */
+	public void setRenditions(Rendition[] renditions) {
+		this.renditions = renditions;
 	}
 
 	/**
@@ -290,26 +290,6 @@ public class Email2HTMLConfiguration {
 	 */
 	public void setTemplateDir(String templateDir) {
 		this.templateDir = templateDir;
-	}
-
-	/**
-	 * Sets the thumbnail height.
-	 * 
-	 * @param thumbnailHeight
-	 *            the new thumbnail height
-	 */
-	public void setThumbnailHeight(String thumbnailHeight) {
-		this.thumbnailHeight = thumbnailHeight;
-	}
-
-	/**
-	 * Sets the thumbnail width.
-	 * 
-	 * @param thumbnailWidth
-	 *            the new thumbnail width
-	 */
-	public void setThumbnailWidth(String thumbnailWidth) {
-		this.thumbnailWidth = thumbnailWidth;
 	}
 
 	/**

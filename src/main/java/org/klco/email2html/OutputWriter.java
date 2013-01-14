@@ -21,8 +21,7 @@
  */
 package org.klco.email2html;
 
-import java.awt.Image;
-import java.awt.image.BufferedImage;
+import java.awt.Color;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -33,9 +32,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.imageio.ImageIO;
 import javax.mail.MessagingException;
 import javax.mail.Part;
+
+import net.coobird.thumbnailator.Thumbnails;
+import net.coobird.thumbnailator.filters.Canvas;
+import net.coobird.thumbnailator.geometry.Positions;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.Template;
@@ -44,6 +46,7 @@ import org.apache.velocity.app.Velocity;
 import org.apache.velocity.tools.generic.DateTool;
 import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.klco.email2html.models.EmailMessage;
+import org.klco.email2html.plugin.Rendition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +65,9 @@ public class OutputWriter {
 	private static final Logger log = LoggerFactory
 			.getLogger(OutputWriter.class);
 
-	private boolean createThumbnails = true;
-
+	/**
+	 * The list of 'index' file templates.
+	 */
 	private List<Template> indexTemplates = new ArrayList<Template>();
 
 	/** The output dir. */
@@ -71,8 +75,8 @@ public class OutputWriter {
 
 	/** The template. */
 	private Template template;
-	private int thumbnailHeight;
-	private int thumbnailWidth;
+
+	private Rendition[] renditions;
 
 	/**
 	 * Constructs a new OutputWriter.
@@ -105,12 +109,7 @@ public class OutputWriter {
 			indexTemplates.add(Velocity.getTemplate(templateName));
 		}
 
-		thumbnailHeight = Integer.parseInt(config.getThumbnailHeight(), 10);
-		thumbnailWidth = Integer.parseInt(config.getThumbnailWidth(), 10);
-		if (thumbnailHeight == -1 || thumbnailWidth == -1) {
-			log.debug("Not creating thumbnail");
-			createThumbnails = false;
-		}
+		this.renditions = config.getRenditions();
 	}
 
 	/**
@@ -132,20 +131,23 @@ public class OutputWriter {
 				+ File.separator
 				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
 		File attachmentFile = new File(attachmentFolder, part.getFileName());
-		File thumbnailFile = new File(attachmentFolder, "thumbnail-"
-				+ part.getFileName());
 
 		if (!attachmentFolder.exists() || !attachmentFile.exists()) {
 			log.warn("Attachment or folder missing, writing attachment");
 			this.writeAttachment(containingMessage, part);
-		} else if (createThumbnails
-				&& part.getContentType().toLowerCase().startsWith("image")
-				&& !thumbnailFile.exists()) {
-			log.warn("Thumbnail missing, writing attachment");
-			this.writeAttachment(containingMessage, part);
-		} else {
-			containingMessage.getAttachments().add(attachmentFile);
 		}
+
+		if (part.getContentType().toLowerCase().startsWith("image")) {
+			for (Rendition rendition : renditions) {
+				File renditionFile = new File(attachmentFolder,
+						rendition.getName() + "-" + part.getFileName());
+				if (!renditionFile.exists()) {
+					log.debug("Rendition {} missing, writing attachment",
+							renditionFile.getName());
+				}
+			}
+		}
+		containingMessage.getAttachments().add(attachmentFile);
 	}
 
 	/**
@@ -199,35 +201,33 @@ public class OutputWriter {
 			log.debug("Writing to file");
 			os = new FileOutputStream(attachmentFile);
 			IOUtils.copy(part.getInputStream(), os);
-			containingMessage.getAttachments().add(attachmentFile);
 		} finally {
 			IOUtils.closeQuietly(os);
 		}
 		log.debug("Attachement saved");
 
-		if (createThumbnails
-				&& part.getContentType().toLowerCase().startsWith("image")) {
-			log.debug("Creating thumbnail");
+		if (part.getContentType().toLowerCase().startsWith("image")) {
+			log.debug("Creating renditions");
 			String contentType = part.getContentType().substring(0,
 					part.getContentType().indexOf(";"));
-			log.debug("Creating thumbnail of type: " + contentType);
+			log.debug("Creating renditions of type: " + contentType);
 
-			File thumbnailFile = new File(attachmentFolder, "thumbnail-"
-					+ part.getFileName());
-			if (!thumbnailFile.exists()) {
-				thumbnailFile.createNewFile();
+			for (Rendition rendition : renditions) {
+				File renditionFile = new File(attachmentFolder, "rendition-"
+						+ part.getFileName());
+				if (!renditionFile.exists()) {
+					renditionFile.createNewFile();
+				}
+				log.debug("Creating rendition file: {}",
+						renditionFile.getAbsolutePath());
+				Thumbnails
+						.of(part.getInputStream())
+						.size(rendition.getWidth(), rendition.getHeight())
+						.addFilter(
+								new Canvas(150, 150, Positions.CENTER,
+										Color.white)).toFile(renditionFile);
+				log.debug("Rendition created");
 			}
-			log.debug("Creating thumbnail file: {}",
-					thumbnailFile.getAbsolutePath());
-
-			BufferedImage renderedImg = new BufferedImage(100, 100,
-					BufferedImage.TYPE_INT_RGB);
-			renderedImg.createGraphics().drawImage(
-					ImageIO.read(part.getInputStream()).getScaledInstance(
-							this.thumbnailWidth, this.thumbnailHeight,
-							Image.SCALE_SMOOTH), 0, 0, null);
-			ImageIO.write(renderedImg, "jpg", thumbnailFile);
-			log.debug("Thumbnail created");
 		}
 	}
 
