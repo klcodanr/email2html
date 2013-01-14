@@ -6,7 +6,7 @@ package org.klco.email2html.plugin;
 public class Rendition {
 
 	/** The fill, set to white by default. */
-	private int fill = 255255255;
+	private boolean fill = false;
 
 	/** The height. */
 	private int height;
@@ -35,7 +35,7 @@ public class Rendition {
 		r.height = Integer.parseInt(sourceStrs[1], 10);
 		r.width = Integer.parseInt(sourceStrs[2], 10);
 		if (sourceStrs.length == 4) {
-			r.fill = Integer.parseInt(sourceStrs[3], 10);
+			r.fill = Boolean.valueOf(sourceStrs[3]);
 		}
 		return r;
 	}
@@ -45,7 +45,7 @@ public class Rendition {
 	 * 
 	 * @return the fill
 	 */
-	public int getFill() {
+	public boolean getFill() {
 		return fill;
 	}
 
@@ -55,7 +55,7 @@ public class Rendition {
 	 * @param fill
 	 *            the new fill
 	 */
-	public void setFill(int fill) {
+	public void setFill(boolean fill) {
 		this.fill = fill;
 	}
 

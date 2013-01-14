@@ -220,14 +220,19 @@ public class OutputWriter {
 				}
 				log.debug("Creating rendition file: {}",
 						renditionFile.getAbsolutePath());
-				Thumbnails
-						.of(part.getInputStream())
-						.size(rendition.getWidth(), rendition.getHeight())
-						.addFilter(
-								new Canvas(rendition.getWidth(), rendition
-										.getHeight(), Positions.CENTER,
-										new Color(rendition.getFill())))
-						.toFile(renditionFile);
+				if (rendition.getFill()) {
+					log.debug("Adding fill");
+					Thumbnails
+							.of(part.getInputStream())
+							.size(rendition.getWidth(), rendition.getHeight())
+							.addFilter(
+									new Canvas(rendition.getWidth(), rendition
+											.getHeight(), Positions.CENTER,
+											Color.WHITE)).toFile(renditionFile);
+				} else {
+					Thumbnails.of(part.getInputStream()).size(
+							rendition.getWidth(), rendition.getHeight());
+				}
 				log.debug("Rendition created");
 			}
 		}
