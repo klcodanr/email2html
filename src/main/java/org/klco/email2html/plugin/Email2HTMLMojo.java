@@ -11,6 +11,7 @@ import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
 import org.klco.email2html.EmailReader;
 import org.klco.email2html.models.Email2HTMLConfiguration;
+import org.slf4j.impl.SimpleLogger;
 
 /**
  * Extracts the emails from the email server and writes the resulting pages to
@@ -67,13 +68,13 @@ public class Email2HTMLMojo extends AbstractMojo {
 	private boolean overwrite;
 
 	/**
-	 * The rendition images to create, should be in the format 
+	 * The rendition images to create, should be in the format
 	 * 
 	 * @parameter
 	 * @required
 	 */
-    private Rendition[] renditions;
-	
+	private Rendition[] renditions;
+
 	/**
 	 * The subject of the emails to search for, optional.
 	 * 
@@ -93,7 +94,7 @@ public class Email2HTMLMojo extends AbstractMojo {
 	 * @parameter default-value="${settings}"
 	 */
 	private Settings settings;
-	
+
 	/**
 	 * Allows me to decrypt passwords.
 	 * 
@@ -125,6 +126,20 @@ public class Email2HTMLMojo extends AbstractMojo {
 	 */
 	public void execute() throws MojoExecutionException {
 		getLog().info("Execute");
+
+		getLog().info("Configuring SLF4j logging");
+		// set to system out so logging is captured with Maven logging
+		System.setProperty(SimpleLogger.SYSTEM_PREFIX
+				+ SimpleLogger.LOG_FILE_KEY, "System.out");
+		System.setProperty(SimpleLogger.SYSTEM_PREFIX
+				+ SimpleLogger.SHOW_THREAD_NAME_KEY, "false");
+		if (getLog().isDebugEnabled()) {
+			System.setProperty(SimpleLogger.SYSTEM_PREFIX
+					+ SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "trace");
+		} else {
+			System.setProperty(SimpleLogger.SYSTEM_PREFIX
+					+ SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "info");
+		}
 
 		final Server server = settings.getServer(serverId);
 
