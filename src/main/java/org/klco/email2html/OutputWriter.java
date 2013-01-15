@@ -133,7 +133,8 @@ public class OutputWriter {
 		File attachmentFile = new File(attachmentFolder, part.getFileName());
 
 		if (!attachmentFolder.exists() || !attachmentFile.exists()) {
-			log.warn("Attachment or folder missing, writing attachment");
+			log.warn("Attachment or folder missing, writing attachment {}",
+					attachmentFile.getName());
 			this.writeAttachment(containingMessage, part);
 		}
 
@@ -142,8 +143,10 @@ public class OutputWriter {
 				File renditionFile = new File(attachmentFolder,
 						rendition.getName() + "-" + part.getFileName());
 				if (!renditionFile.exists()) {
-					log.debug("Rendition {} missing, writing attachment",
-							renditionFile.getName());
+					log.warn("Rendition {} missing, writing attachment {}",
+							renditionFile.getName(), attachmentFile.getName());
+					this.writeAttachment(containingMessage, part);
+
 				}
 			}
 		}
@@ -223,7 +226,7 @@ public class OutputWriter {
 				if (rendition.getFill()) {
 					log.debug("Adding fill");
 					Thumbnails
-							.of(part.getInputStream())
+							.of(attachmentFile)
 							.size(rendition.getWidth(), rendition.getHeight())
 							.addFilter(
 									new Canvas(rendition.getWidth(), rendition
