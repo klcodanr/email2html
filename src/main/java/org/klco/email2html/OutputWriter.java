@@ -43,7 +43,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
+import org.apache.velocity.tools.ToolManager;
 import org.apache.velocity.tools.generic.DateTool;
+import org.apache.velocity.tools.generic.EscapeTool;
 import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.klco.email2html.models.EmailMessage;
 import org.klco.email2html.plugin.Rendition;
@@ -78,6 +80,8 @@ public class OutputWriter {
 
 	private Rendition[] renditions;
 
+	private ToolManager velocityToolManager;
+
 	/**
 	 * Constructs a new OutputWriter.
 	 * 
@@ -108,6 +112,10 @@ public class OutputWriter {
 			log.debug("Initializing index template from: {}", templateName);
 			indexTemplates.add(Velocity.getTemplate(templateName));
 		}
+
+		log.debug("Loading Velocity tools");
+		velocityToolManager = new ToolManager();
+		velocityToolManager.configure("velocity-tools.xml");
 
 		this.renditions = config.getRenditions();
 	}
@@ -255,7 +263,8 @@ public class OutputWriter {
 		log.trace("writeHTML");
 
 		log.debug("Initializing templating context");
-		VelocityContext context = new VelocityContext();
+		VelocityContext context = new VelocityContext(
+				velocityToolManager.createContext());
 		context.put("emailMessage", emailMessage);
 
 		File messageFile = new File(outputDir.getAbsolutePath()
@@ -281,9 +290,6 @@ public class OutputWriter {
 	private void writeHTML(File messageFile, VelocityContext context,
 			Template template) throws IOException {
 		log.trace("writeHTML");
-
-		log.debug("Adding tools to context");
-		context.put("dateTool", new DateTool());
 
 		if (!messageFile.exists()) {
 			log.debug("Creating message file");
@@ -316,7 +322,8 @@ public class OutputWriter {
 		log.trace("writeHTML");
 
 		log.debug("Initializing templating context");
-		VelocityContext context = new VelocityContext();
+		VelocityContext context = new VelocityContext(
+				velocityToolManager.createContext());
 		context.put("messages", messages);
 
 		for (Template indexTemplate : indexTemplates) {
