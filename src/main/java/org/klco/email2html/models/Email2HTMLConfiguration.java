@@ -23,6 +23,7 @@ package org.klco.email2html.models;
 
 import org.klco.email2html.plugin.Rendition;
 
+// TODO: Auto-generated Javadoc
 /**
  * Configures the Email -> HTML process.
  * 
@@ -34,6 +35,9 @@ public class Email2HTMLConfiguration {
 	 * Strings which break the original message and the replies.
 	 */
 	private String breakStrings;
+	
+	/** Flag for excluding duplicate attachments based on their MD5 Checksum (if available). */
+	private boolean excludeDuplicates = true;
 
 	/** The name of the folder to retrieve, defaults to 'Inbox'. */
 	private String folder = "Inbox";
@@ -194,6 +198,15 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
+	 * Checks if is exclude duplicates.
+	 *
+	 * @return true, if is exclude duplicates
+	 */
+	public boolean isExcludeDuplicates() {
+		return excludeDuplicates;
+	}
+
+	/**
 	 * Sets the break strings.
 	 * 
 	 * @param breakStrings
@@ -201,6 +214,15 @@ public class Email2HTMLConfiguration {
 	 */
 	public void setBreakStrings(String breakStrings) {
 		this.breakStrings = breakStrings;
+	}
+
+	/**
+	 * Sets the exclude duplicates.
+	 *
+	 * @param excludeDuplicates the new exclude duplicates
+	 */
+	public void setExcludeDuplicates(boolean excludeDuplicates) {
+		this.excludeDuplicates = excludeDuplicates;
 	}
 
 	/**

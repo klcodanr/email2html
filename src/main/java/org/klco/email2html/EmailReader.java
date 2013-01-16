@@ -28,8 +28,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.mail.BodyPart;
 import javax.mail.Folder;
@@ -42,6 +44,7 @@ import javax.mail.Store;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimePart;
 import javax.mail.internet.ParseException;
 import javax.mail.search.SubjectTerm;
 import javax.mail.util.SharedByteArrayInputStream;
@@ -109,6 +112,11 @@ public class EmailReader {
 	/** The Constant READABLE_DATE_FORMAT. */
 	private static final SimpleDateFormat READABLE_DATE_FORMAT = new SimpleDateFormat(
 			"MMM d, yyyy");
+
+	/**
+	 * 
+	 */
+	private Set<String> attachmentChecksums = new HashSet<String>();
 
 	/**
 	 * Gets the sender.
@@ -221,7 +229,21 @@ public class EmailReader {
 				|| CT_PT_APPLICATION.equalsIgnoreCase(contentType
 						.getPrimaryType())) {
 			log.debug("Handling attachment");
-			outputWriter.addAttachment(message, part);
+			String checksum = null;
+			if (part instanceof MimePart) {
+				checksum = ((MimePart) part).getContentMD5();
+				log.debug("Loading content checksum {}", checksum);
+			}
+			if (!config.isExcludeDuplicates() || checksum == null
+					|| !this.attachmentChecksums.contains(checksum)) {
+				outputWriter.addAttachment(message, part);
+				if (checksum != null && config.isExcludeDuplicates()) {
+					attachmentChecksums.add(checksum);
+				}
+			} else {
+				log.warn("Excluding duplicate attachment {}",
+						part.getFileName());
+			}
 		} else {
 			log.warn("Unexpected primary type {} for content type {}",
 					contentType.getPrimaryType(), part.getContentType());

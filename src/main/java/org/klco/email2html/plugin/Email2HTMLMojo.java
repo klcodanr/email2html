@@ -30,6 +30,14 @@ public class Email2HTMLMojo extends AbstractMojo {
 	 */
 	private String breakStrings = "<div class=\"gmail_quote,<hr,Sent from my,Technical details of permanent failure,Forwarded message,";
 
+
+	/** 
+	 * Flag for excluding duplicate attachments based on their MD5 Checksum (if available).
+	 * 
+	 * @parameter default-value="true"
+	 */
+	private boolean excludeDuplicates = true;
+	
 	/**
 	 * The name of the folder to retrieve, defaults to 'Inbox'.
 	 * 
@@ -127,24 +135,11 @@ public class Email2HTMLMojo extends AbstractMojo {
 	public void execute() throws MojoExecutionException {
 		getLog().info("Execute");
 
-		getLog().info("Configuring SLF4j logging");
-		// set to system out so logging is captured with Maven logging
-		System.setProperty(SimpleLogger.SYSTEM_PREFIX
-				+ SimpleLogger.LOG_FILE_KEY, "System.out");
-		System.setProperty(SimpleLogger.SYSTEM_PREFIX
-				+ SimpleLogger.SHOW_THREAD_NAME_KEY, "false");
-		if (getLog().isDebugEnabled()) {
-			System.setProperty(SimpleLogger.SYSTEM_PREFIX
-					+ SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "trace");
-		} else {
-			System.setProperty(SimpleLogger.SYSTEM_PREFIX
-					+ SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "info");
-		}
-
 		final Server server = settings.getServer(serverId);
 
 		Email2HTMLConfiguration config = new Email2HTMLConfiguration();
 		config.setBreakStrings(breakStrings);
+		config.setExcludeDuplicates(excludeDuplicates);
 		config.setFolder(folder);
 		config.setIndexTemplateNames(indexTemplateNames);
 		config.setMessageTemplateName(messageTemplateName);
