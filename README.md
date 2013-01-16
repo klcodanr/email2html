@@ -31,7 +31,6 @@ The application takes the following configuration values:
 * **searchSubject** - The subject of the emails to search for, optional.
 * **templateDir** - The path to the folder containing the Velocity templates, must be set.
 * **renditions** - The renditions to create, in the format: [name1] [height1] [width1] [fill1 (optional)], [name2] [height2] [width2] [fill2 (optional)]
-* **thumbnailWidth** - The thumbnail width, setting this to -1 disables thumbnail creation.
 * **url** - The URL to connect to retrieve the email.
 * **username** - The username with which to connect to the mail server.
 
