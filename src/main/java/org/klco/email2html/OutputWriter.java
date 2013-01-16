@@ -164,6 +164,7 @@ public class OutputWriter {
 				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
 		File attachmentFile = new File(attachmentFolder, part.getFileName());
 
+		boolean addAttachment = true;
 		boolean writeAttachment = false;
 		if (!attachmentFolder.exists() || !attachmentFile.exists()) {
 			log.warn("Attachment or folder missing, writing attachment {}",
@@ -185,7 +186,7 @@ public class OutputWriter {
 			}
 		}
 		if (writeAttachment) {
-			this.writeAttachment(containingMessage, part);
+			addAttachment = writeAttachment(containingMessage, part);
 		} else {
 			if (this.excludeDuplicates) {
 				log.debug("Computing checksum");
@@ -197,13 +198,22 @@ public class OutputWriter {
 					for (int read = is.read(); read != -1; read = is.read()) {
 						checksum.update(read);
 					}
-					attachmentChecksums.add(checksum.getValue());
+					long value = checksum.getValue();
+					if (attachmentChecksums.contains(value)) {
+						addAttachment = false;
+					} else {
+						attachmentChecksums.add(checksum.getValue());
+					}
 				} finally {
 					IOUtils.closeQuietly(is);
 				}
 			}
 		}
-		containingMessage.getAttachments().add(attachmentFile);
+		if (addAttachment) {
+			containingMessage.getAttachments().add(attachmentFile);
+		} else {
+			log.debug("Attachment is a duplicate, not adding as message attachment");
+		}
 	}
 
 	/**
@@ -233,7 +243,7 @@ public class OutputWriter {
 	 * @throws MessagingException
 	 *             the messaging exception
 	 */
-	public void writeAttachment(EmailMessage containingMessage, Part part)
+	public boolean writeAttachment(EmailMessage containingMessage, Part part)
 			throws IOException, MessagingException {
 		log.trace("writeAttachment");
 
@@ -254,7 +264,7 @@ public class OutputWriter {
 				if (this.attachmentChecksums.contains(value)) {
 					log.info("Skipping duplicate attachment: {}",
 							part.getFileName());
-					return;
+					return false;
 				} else {
 					attachmentChecksums.add(value);
 				}
@@ -320,6 +330,7 @@ public class OutputWriter {
 				log.debug("Rendition created");
 			}
 		}
+		return true;
 	}
 
 	/**
