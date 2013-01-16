@@ -22,15 +22,22 @@
 package org.klco.email2html;
 
 import java.awt.Color;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.zip.CRC32;
 
 import javax.mail.MessagingException;
 import javax.mail.Part;
@@ -44,8 +51,6 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.tools.ToolManager;
-import org.apache.velocity.tools.generic.DateTool;
-import org.apache.velocity.tools.generic.EscapeTool;
 import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.klco.email2html.models.EmailMessage;
 import org.klco.email2html.plugin.Rendition;
@@ -68,6 +73,17 @@ public class OutputWriter {
 			.getLogger(OutputWriter.class);
 
 	/**
+	 * A set of the downloaded attachment checksums, can ensure each attachment
+	 * is only downloaded once
+	 */
+	private Set<Long> attachmentChecksums = new HashSet<Long>();
+
+	/**
+	 * A flag for excluding duplicates, loaded from the configuration
+	 */
+	private boolean excludeDuplicates;
+
+	/**
 	 * The list of 'index' file templates.
 	 */
 	private List<Template> indexTemplates = new ArrayList<Template>();
@@ -75,11 +91,17 @@ public class OutputWriter {
 	/** The output dir. */
 	private File outputDir;
 
+	/**
+	 * The image renditions to create
+	 */
+	private Rendition[] renditions;
+
 	/** The template. */
 	private Template template;
 
-	private Rendition[] renditions;
-
+	/**
+	 * The velocity tool manager.
+	 */
 	private ToolManager velocityToolManager;
 
 	/**
@@ -118,6 +140,8 @@ public class OutputWriter {
 		velocityToolManager.configure("velocity-tools.xml");
 
 		this.renditions = config.getRenditions();
+
+		this.excludeDuplicates = config.isExcludeDuplicates();
 	}
 
 	/**
@@ -140,21 +164,42 @@ public class OutputWriter {
 				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
 		File attachmentFile = new File(attachmentFolder, part.getFileName());
 
+		boolean writeAttachment = false;
 		if (!attachmentFolder.exists() || !attachmentFile.exists()) {
 			log.warn("Attachment or folder missing, writing attachment {}",
 					attachmentFile.getName());
-			this.writeAttachment(containingMessage, part);
+			writeAttachment = true;
 		}
 
-		if (part.getContentType().toLowerCase().startsWith("image")) {
+		if (!writeAttachment
+				&& part.getContentType().toLowerCase().startsWith("image")) {
 			for (Rendition rendition : renditions) {
 				File renditionFile = new File(attachmentFolder,
 						rendition.getName() + "-" + part.getFileName());
 				if (!renditionFile.exists()) {
 					log.warn("Rendition {} missing, writing attachment {}",
 							renditionFile.getName(), attachmentFile.getName());
-					this.writeAttachment(containingMessage, part);
-
+					writeAttachment = true;
+					break;
+				}
+			}
+		}
+		if (writeAttachment) {
+			this.writeAttachment(containingMessage, part);
+		} else {
+			if (this.excludeDuplicates) {
+				log.debug("Computing checksum");
+				InputStream is = null;
+				try {
+					CRC32 checksum = new CRC32();
+					is = new BufferedInputStream(new FileInputStream(
+							attachmentFile));
+					for (int read = is.read(); read != -1; read = is.read()) {
+						checksum.update(read);
+					}
+					attachmentChecksums.add(checksum.getValue());
+				} finally {
+					IOUtils.closeQuietly(is);
 				}
 			}
 		}
@@ -192,30 +237,57 @@ public class OutputWriter {
 			throws IOException, MessagingException {
 		log.trace("writeAttachment");
 
-		File attachmentFolder = new File(outputDir.getAbsolutePath()
-				+ File.separator
-				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
-
-		if (!attachmentFolder.exists()) {
-			log.debug("Creating attachment folder");
-			attachmentFolder.mkdirs();
-		}
-		File attachmentFile = new File(attachmentFolder, part.getFileName());
-		log.debug("Writing attachment file: {}",
-				attachmentFile.getAbsolutePath());
-
-		if (!attachmentFile.exists()) {
-			attachmentFile.createNewFile();
-		}
-		OutputStream os = null;
+		File attachmentFolder;
+		File attachmentFile;
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		InputStream in = null;
 		try {
-			log.debug("Writing to file");
-			os = new FileOutputStream(attachmentFile);
-			IOUtils.copy(part.getInputStream(), os);
+			in = part.getInputStream();
+			IOUtils.copy(part.getInputStream(), baos);
+
+			if (this.excludeDuplicates) {
+				log.debug("Computing checksum");
+				CRC32 checksum = new CRC32();
+				checksum.update(baos.toByteArray());
+
+				long value = checksum.getValue();
+				if (this.attachmentChecksums.contains(value)) {
+					log.info("Skipping duplicate attachment: {}",
+							part.getFileName());
+					return;
+				} else {
+					attachmentChecksums.add(value);
+				}
+			}
+
+			attachmentFolder = new File(outputDir.getAbsolutePath()
+					+ File.separator
+					+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
+
+			if (!attachmentFolder.exists()) {
+				log.debug("Creating attachment folder");
+				attachmentFolder.mkdirs();
+			}
+			attachmentFile = new File(attachmentFolder, part.getFileName());
+			log.debug("Writing attachment file: {}",
+					attachmentFile.getAbsolutePath());
+
+			if (!attachmentFile.exists()) {
+				attachmentFile.createNewFile();
+			}
+			OutputStream os = null;
+			try {
+				log.debug("Writing to file");
+				os = new FileOutputStream(attachmentFile);
+				IOUtils.copy(new ByteArrayInputStream(baos.toByteArray()), os);
+			} finally {
+				IOUtils.closeQuietly(os);
+			}
+			log.debug("Attachement saved");
 		} finally {
-			IOUtils.closeQuietly(os);
+			IOUtils.closeQuietly(baos);
+			IOUtils.closeQuietly(in);
 		}
-		log.debug("Attachement saved");
 
 		if (part.getContentType().toLowerCase().startsWith("image")) {
 			log.debug("Creating renditions");
