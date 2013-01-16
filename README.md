@@ -22,6 +22,7 @@ The application takes the following configuration values:
 
 * **breakStrings** - Strings which break the original message and the replies.
 * **folder** - The name of the folder to retrieve, defaults to 'Inbox'.
+* **excludeDuplicates**  - Flag for excluding duplicate attachments based on their MD5 Checksum (if available)
 * **indexTemplateNames** - A comma-separated list of index templates, see templating below for more.
 * **messageTemplateName** - The message template name, see templating below for more.
 * **outputDir** - The output directory to which to save the files.
@@ -29,7 +30,7 @@ The application takes the following configuration values:
 * **password** - The password to use to connect to the mail server, must be set.
 * **searchSubject** - The subject of the emails to search for, optional.
 * **templateDir** - The path to the folder containing the Velocity templates, must be set.
-* **thumbnailHeight** - The thumbnail height, setting this to -1 disables thumbnail creation.
+* **renditions** - The renditions to create, in the format: [name1] [height1] [width1] [fill1 (optional)], [name2] [height2] [width2] [fill2 (optional)]
 * **thumbnailWidth** - The thumbnail width, setting this to -1 disables thumbnail creation.
 * **url** - The URL to connect to retrieve the email.
 * **username** - The username with which to connect to the mail server.
@@ -57,28 +58,41 @@ The second option is to add Email2HTML as a plugin in a Maven build.  To do this
 				<serverId>gmail</serverId>
 				<outputDir>${basedir}/target/site</outputDir>
 				<indexTemplateNames>index.html.vm,all.html.vm</indexTemplateNames>
+				<renditions>
+					<rendition>
+						<name>thumbnail</name>
+						<width>100</width>
+						<height>100</height>
+						<fill>true</fill>
+					</rendition>
+					<rendition>
+						<name>web</name>
+						<width>800</width>
+						<height>800</height>
+					</rendition>
+				</renditions>
 			</configuration>
 		</plugin>
 
 The Email2HTML Maven plugin takes the following configuration values:
 
 * **breakStrings** - Strings which break the original message and the replies.
+* **excludeDuplicates**  - Flag for excluding duplicate attachments based on their MD5 Checksum (if available)
 * **folder** - The name of the folder to retrieve, defaults to 'Inbox'.
 * **indexTemplateNames** - A comma-separated list of index templates, see templating below for more.
 * **messageTemplateName** - The message template name, see templating below for more.
 * **outputDir** - The output directory to which to save the files.
 * **overwrite** - Whether or not to overwrite existing content.
+* **renditions** - The renditions to create, with the keys: name, width, height and optionally, fill.
 * **searchSubject** - The subject of the emails to search for, optional.
 * **serverId** - The id of the server to retrieve from the settings.xml, must contain the username and password.
 * **templateDir** - The path to the folder containing the Velocity templates, must be set.
-* **thumbnailHeight** - The thumbnail height, setting this to -1 disables thumbnail creation.
-* **thumbnailWidth** - The thumbnail width, setting this to -1 disables thumbnail creation.
 * **url** - The URL to connect to retrieve the email.
 
 Templates 
 ----------
 
-Email2HTML uses [Apache Velocity](http://velocity.apache.org/).  All templates will be passed an instance of the velocity [DateTool](http://velocity.apache.org/tools/devel/javadoc/org/apache/velocity/tools/generic/DateTool.html)  The names of the files and image folders can be derived from the sentDate in the format *yyyy-MM-dd-HH-mm-ss*.  Two different types of templates are available:
+Email2HTML uses [Apache Velocity](http://velocity.apache.org/).  All templates will be passed the Velocity general tools.  The names of the files and image folders can be derived from the sentDate in the format *yyyy-MM-dd-HH-mm-ss*.  Two different types of templates are available:
 
 **Message Template**
 

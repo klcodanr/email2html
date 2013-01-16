@@ -66,12 +66,12 @@ public class ConfigurationUtils {
 					log.info("Setting property {} to value {}", key, Arrays.toString(renditions));
 					field.setAccessible(true);
 					field.set(config, renditions);
-				}else if(field.getName().equals("overwrite")){
+				}else if(field.getName().equals("overwrite") || field.getName().equals("excludeDuplicates")){
 					Boolean overwrite = Boolean.valueOf(value); 
 					log.info("Setting property {} to value {}", key, overwrite);
 					field.setAccessible(true);
 					field.set(config, overwrite);
-				}else {
+				} else {
 					log.info("Setting property {} to value {}", key, value);
 					field.setAccessible(true);
 					field.set(config, value);
