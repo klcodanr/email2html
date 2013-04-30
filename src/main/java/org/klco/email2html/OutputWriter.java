@@ -358,8 +358,8 @@ public class OutputWriter {
 						ImageIO.write(img, "image/"
 								+ renditionFile.getName().split("\\.")[1],
 								new FileImageOutputStream(renditionFile));
-					} catch (Exception e) {
-						log.warn("Exception creating placeholder rendition", e);
+					} catch (Throwable th) {
+						log.warn("Exception creating backup rendition", th);
 					}
 				}
 			}
