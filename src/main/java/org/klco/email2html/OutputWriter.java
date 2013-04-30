@@ -22,8 +22,6 @@
 package org.klco.email2html;
 
 import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -41,8 +39,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.zip.CRC32;
 
-import javax.imageio.ImageIO;
-import javax.imageio.stream.FileImageOutputStream;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 
@@ -51,6 +47,7 @@ import net.coobird.thumbnailator.filters.Canvas;
 import net.coobird.thumbnailator.geometry.Positions;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -257,7 +254,7 @@ public class OutputWriter {
 		InputStream in = null;
 		try {
 			in = part.getInputStream();
-			IOUtils.copy(part.getInputStream(), baos);
+			IOUtils.copy(in, baos);
 
 			if (this.excludeDuplicates) {
 				log.debug("Computing checksum");
@@ -332,26 +329,14 @@ public class OutputWriter {
 					log.warn("Free Memory: {}", rt.freeMemory());
 					log.warn("Max Memory: {}", rt.maxMemory());
 					log.warn("Total Memory: {}", rt.totalMemory());
-					try {
-						BufferedImage originalImage = ImageIO
-								.read(attachmentFile);
-						int type = originalImage.getType() == 0 ? BufferedImage.TYPE_INT_ARGB
-								: originalImage.getType();
-						BufferedImage resizedImage = new BufferedImage(
-								rendition.getWidth(), rendition.getHeight(),
-								type);
-						Graphics2D g = resizedImage.createGraphics();
-						g.drawImage(originalImage, 0, 0, rendition.getWidth(),
-								rendition.getHeight(), null);
-						g.dispose();
-						ImageIO.write(resizedImage, attachmentFile.getName()
-								.split("\\.")[1], new FileImageOutputStream(
-								renditionFile));
-					} catch (OutOfMemoryError oome2) {
-						log.warn(
-								"Unable to create rendition after garbage collection",
-								oome2);
-					}
+					
+					String[] command = new String[] { "convert",
+							attachmentFile.getAbsolutePath(), "-resize",
+							rendition.getHeight() + "×" + rendition.getWidth(),
+							renditionFile.getAbsolutePath() };
+					log.debug("Trying to resize with ImageMagick: "+StringUtils.join(command," "));
+					
+					rt.exec(command);
 				} catch (Exception t) {
 					log.warn("Exception creating rendition: " + rendition, t);
 				}
