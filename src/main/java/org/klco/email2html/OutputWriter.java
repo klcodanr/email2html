@@ -22,8 +22,6 @@
 package org.klco.email2html;
 
 import java.awt.Color;
-import java.awt.Image;
-import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -41,8 +39,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.zip.CRC32;
 
-import javax.imageio.ImageIO;
-import javax.imageio.stream.FileImageOutputStream;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 
@@ -321,50 +317,55 @@ public class OutputWriter {
 					}
 					log.debug("Creating rendition file: {}",
 							renditionFile.getAbsolutePath());
-					if (rendition.getFill()) {
-						log.debug("Adding fill");
-						Thumbnails
-								.of(attachmentFile)
-								.size(rendition.getWidth(),
-										rendition.getHeight())
-								.addFilter(
-										new Canvas(rendition.getWidth(),
-												rendition.getHeight(),
-												Positions.CENTER, Color.WHITE))
-								.toFile(renditionFile);
-					} else {
-						Thumbnails
-								.of(part.getInputStream())
-								.size(rendition.getWidth(),
-										rendition.getHeight())
-								.toFile(renditionFile);
-					}
+					createRendition(attachmentFile, renditionFile, rendition);
 					log.debug("Rendition created");
-				} catch (Throwable t) {
-					log.warn("Exception creating rendition: " + rendition, t);
-					try {
-						BufferedImage img = ImageIO.read(attachmentFile);
-						if (rendition.getHeight() > img.getHeight(null)
-								|| img.getHeight(null) == -1) {
-							img = (BufferedImage) img.getScaledInstance(-1,
-									rendition.getHeight(), Image.SCALE_SMOOTH);
-						}
+				} catch (OutOfMemoryError oome) {
+					log.warn("Ran out of memory creating rendition: "
+							+ rendition, oome);
 
-						if (rendition.getWidth() > img.getWidth(null)
-								|| img.getWidth(null) == -1) {
-							img = (BufferedImage) img.getScaledInstance(rendition.getWidth(),
-									-1, Image.SCALE_FAST);
-						}
-						ImageIO.write(img, "image/"
-								+ renditionFile.getName().split("\\.")[1],
-								new FileImageOutputStream(renditionFile));
-					} catch (Throwable th) {
-						log.warn("Exception creating backup rendition", th);
+					Runtime rt = Runtime.getRuntime();
+					log.warn("Free Memory: {}", rt.freeMemory());
+					log.warn("Max Memory: {}", rt.maxMemory());
+					log.warn("Total Memory: {}", rt.totalMemory());
+					rt.gc();
+					try {
+						createRendition(attachmentFile, renditionFile,
+								rendition);
+					} catch (OutOfMemoryError oome2) {
+						log.warn(
+								"Unable to create rendition after garbage collection",
+								oome2);
 					}
+
+				} catch (Exception t) {
+					log.warn("Exception creating rendition: " + rendition, t);
 				}
 			}
 		}
 		return true;
+	}
+
+	private void createRendition(File originalFile, File renditionFile,
+			Rendition rendition) throws IOException {
+		if (!renditionFile.exists()) {
+			renditionFile.createNewFile();
+		}
+		log.debug("Creating rendition file: {}",
+				renditionFile.getAbsolutePath());
+		if (rendition.getFill()) {
+			log.debug("Adding fill");
+			Thumbnails
+					.of(originalFile)
+					.size(rendition.getWidth(), rendition.getHeight())
+					.addFilter(
+							new Canvas(rendition.getWidth(), rendition
+									.getHeight(), Positions.CENTER, Color.WHITE))
+					.toFile(renditionFile);
+		} else {
+			Thumbnails.of(originalFile)
+					.size(rendition.getWidth(), rendition.getHeight())
+					.toFile(renditionFile);
+		}
 	}
 
 	/**
