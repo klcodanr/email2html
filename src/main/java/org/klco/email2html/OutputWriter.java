@@ -273,25 +273,28 @@ public class OutputWriter {
 			attachmentFolder = new File(outputDir.getAbsolutePath()
 					+ File.separator
 					+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
-
 			if (!attachmentFolder.exists()) {
 				log.debug("Creating attachment folder");
 				attachmentFolder.mkdirs();
 			}
+
 			attachmentFile = new File(attachmentFolder, part.getFileName());
 			log.debug("Writing attachment file: {}",
 					attachmentFile.getAbsolutePath());
-
 			if (!attachmentFile.exists()) {
 				attachmentFile.createNewFile();
 			}
+
 			OutputStream os = null;
+			InputStream is = null;
 			try {
 				log.debug("Writing to file");
 				os = new FileOutputStream(attachmentFile);
-				IOUtils.copy(new ByteArrayInputStream(baos.toByteArray()), os);
+				is = new ByteArrayInputStream(baos.toByteArray());
+				IOUtils.copy(is, os);
 			} finally {
 				IOUtils.closeQuietly(os);
+				IOUtils.closeQuietly(is);
 			}
 			log.debug("Attachement saved");
 		} finally {
@@ -308,26 +311,47 @@ public class OutputWriter {
 			for (Rendition rendition : renditions) {
 				File renditionFile = new File(attachmentFolder,
 						rendition.getName() + "-" + part.getFileName());
-				if (!renditionFile.exists()) {
-					renditionFile.createNewFile();
+				try {
+					if (!renditionFile.exists()) {
+						renditionFile.createNewFile();
+					}
+					log.debug("Creating rendition file: {}",
+							renditionFile.getAbsolutePath());
+					if (rendition.getFill()) {
+						log.debug("Adding fill");
+						Thumbnails
+								.of(attachmentFile)
+								.size(rendition.getWidth(),
+										rendition.getHeight())
+								.addFilter(
+										new Canvas(rendition.getWidth(),
+												rendition.getHeight(),
+												Positions.CENTER, Color.WHITE))
+								.toFile(renditionFile);
+					} else {
+						Thumbnails
+								.of(part.getInputStream())
+								.size(rendition.getWidth(),
+										rendition.getHeight())
+								.toFile(renditionFile);
+					}
+					log.debug("Rendition created");
+				} catch (Throwable t) {
+					log.warn("Exception creating rendition: " + rendition, t);
+					try {
+						Thumbnails
+								.of(new ByteArrayInputStream(new byte[0]))
+								.size(rendition.getWidth(),
+										rendition.getHeight())
+								.addFilter(
+										new Canvas(rendition.getWidth(),
+												rendition.getHeight(),
+												Positions.CENTER, Color.WHITE))
+								.toFile(renditionFile);
+					} catch (Exception e) {
+						log.warn("Exception creating placeholder rendition", e);
+					}
 				}
-				log.debug("Creating rendition file: {}",
-						renditionFile.getAbsolutePath());
-				if (rendition.getFill()) {
-					log.debug("Adding fill");
-					Thumbnails
-							.of(attachmentFile)
-							.size(rendition.getWidth(), rendition.getHeight())
-							.addFilter(
-									new Canvas(rendition.getWidth(), rendition
-											.getHeight(), Positions.CENTER,
-											Color.WHITE)).toFile(renditionFile);
-				} else {
-					Thumbnails.of(part.getInputStream())
-							.size(rendition.getWidth(), rendition.getHeight())
-							.toFile(renditionFile);
-				}
-				log.debug("Rendition created");
 			}
 		}
 		return true;
