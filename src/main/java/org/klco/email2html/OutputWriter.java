@@ -353,7 +353,7 @@ public class OutputWriter {
 						if (rendition.getWidth() > img.getWidth(null)
 								|| img.getWidth(null) == -1) {
 							img = (BufferedImage) img.getScaledInstance(rendition.getWidth(),
-									-1, Image.SCALE_SMOOTH);
+									-1, Image.SCALE_FAST);
 						}
 						ImageIO.write(img, "image/"
 								+ renditionFile.getName().split("\\.")[1],
