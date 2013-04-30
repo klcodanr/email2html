@@ -22,7 +22,7 @@ The application takes the following configuration values:
 
 * **breakStrings** - Strings which break the original message and the replies.
 * **folder** - The name of the folder to retrieve, defaults to 'Inbox'.
-* **excludeDuplicates**  - Flag for excluding duplicate attachments based on their MD5 Checksum (if available)
+* **excludeDuplicates**  - Flag for excluding duplicate attachments based on a CRC32 Checksum
 * **indexTemplateNames** - A comma-separated list of index templates, see templating below for more.
 * **messageTemplateName** - The message template name, see templating below for more.
 * **outputDir** - The output directory to which to save the files.
@@ -76,7 +76,7 @@ The second option is to add Email2HTML as a plugin in a Maven build.  To do this
 The Email2HTML Maven plugin takes the following configuration values:
 
 * **breakStrings** - Strings which break the original message and the replies.
-* **excludeDuplicates**  - Flag for excluding duplicate attachments based on their MD5 Checksum (if available)
+* **excludeDuplicates**  - Flag for excluding duplicate attachments based on a CRC32 Checksum
 * **folder** - The name of the folder to retrieve, defaults to 'Inbox'.
 * **indexTemplateNames** - A comma-separated list of index templates, see templating below for more.
 * **messageTemplateName** - The message template name, see templating below for more.
