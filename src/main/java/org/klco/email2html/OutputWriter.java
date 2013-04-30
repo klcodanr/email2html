@@ -320,14 +320,14 @@ public class OutputWriter {
 					createRendition(attachmentFile, renditionFile, rendition);
 					log.debug("Rendition created");
 				} catch (OutOfMemoryError oome) {
+					Runtime rt = Runtime.getRuntime();
+					rt.gc();
 					log.warn("Ran out of memory creating rendition: "
 							+ rendition, oome);
 
-					Runtime rt = Runtime.getRuntime();
 					log.warn("Free Memory: {}", rt.freeMemory());
 					log.warn("Max Memory: {}", rt.maxMemory());
 					log.warn("Total Memory: {}", rt.totalMemory());
-					rt.gc();
 					try {
 						createRendition(attachmentFile, renditionFile,
 								rendition);
@@ -336,7 +336,6 @@ public class OutputWriter {
 								"Unable to create rendition after garbage collection",
 								oome2);
 					}
-
 				} catch (Exception t) {
 					log.warn("Exception creating rendition: " + rendition, t);
 				}
