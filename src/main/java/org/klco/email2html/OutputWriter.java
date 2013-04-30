@@ -324,6 +324,7 @@ public class OutputWriter {
 					log.warn("Free Memory: {}", rt.freeMemory());
 					log.warn("Max Memory: {}", rt.maxMemory());
 					log.warn("Total Memory: {}", rt.totalMemory());
+<<<<<<< HEAD
 
 					String[] command = null;
 					if (rendition.getFill()) {
@@ -354,6 +355,15 @@ public class OutputWriter {
 					log.debug("Trying to resize with ImageMagick: "
 							+ StringUtils.join(command, " "));
 
+=======
+					
+					String[] command = new String[] { "convert",
+							attachmentFile.getAbsolutePath(), "-resize",
+							rendition.getHeight() + "x" + rendition.getWidth(),
+							renditionFile.getAbsolutePath() };
+					log.debug("Trying to resize with ImageMagick: "+StringUtils.join(command," "));
+					
+>>>>>>> b1dc8e2bf35d6d166fa8d03d1a434f2c6145a3ac
 					rt.exec(command);
 				} catch (Exception t) {
 					log.warn("Exception creating rendition: " + rendition, t);
