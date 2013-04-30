@@ -23,8 +23,8 @@ package org.klco.email2html;
 
 import java.awt.Color;
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -250,26 +250,9 @@ public class OutputWriter {
 
 		File attachmentFolder;
 		File attachmentFile;
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		InputStream in = null;
+		OutputStream out = null;
 		try {
-			in = part.getInputStream();
-			IOUtils.copy(in, baos);
-
-			if (this.excludeDuplicates) {
-				log.debug("Computing checksum");
-				CRC32 checksum = new CRC32();
-				checksum.update(baos.toByteArray());
-
-				long value = checksum.getValue();
-				if (this.attachmentChecksums.contains(value)) {
-					log.info("Skipping duplicate attachment: {}",
-							part.getFileName());
-					return false;
-				} else {
-					attachmentChecksums.add(value);
-				}
-			}
 
 			attachmentFolder = new File(outputDir.getAbsolutePath()
 					+ File.separator
@@ -286,20 +269,32 @@ public class OutputWriter {
 				attachmentFile.createNewFile();
 			}
 
-			OutputStream os = null;
-			InputStream is = null;
-			try {
-				log.debug("Writing to file");
-				os = new FileOutputStream(attachmentFile);
-				is = new ByteArrayInputStream(baos.toByteArray());
-				IOUtils.copy(is, os);
-			} finally {
-				IOUtils.closeQuietly(os);
-				IOUtils.closeQuietly(is);
+			in = new BufferedInputStream(part.getInputStream());
+			out = new BufferedOutputStream(new FileOutputStream(attachmentFile));
+
+			log.debug("Downloading attachment");
+			CRC32 checksum = new CRC32();
+			for (int b = in.read(); b != -1; b = in.read()) {
+				checksum.update(b);
+				out.write(b);
 			}
+
+			if (this.excludeDuplicates) {
+				log.debug("Computing checksum");
+				long value = checksum.getValue();
+				if (this.attachmentChecksums.contains(value)) {
+					log.info("Skipping duplicate attachment: {}",
+							part.getFileName());
+					attachmentFile.delete();
+					return false;
+				} else {
+					attachmentChecksums.add(value);
+				}
+			}
+
 			log.debug("Attachement saved");
 		} finally {
-			IOUtils.closeQuietly(baos);
+			IOUtils.closeQuietly(out);
 			IOUtils.closeQuietly(in);
 		}
 
@@ -329,13 +324,36 @@ public class OutputWriter {
 					log.warn("Free Memory: {}", rt.freeMemory());
 					log.warn("Max Memory: {}", rt.maxMemory());
 					log.warn("Total Memory: {}", rt.totalMemory());
-					
-					String[] command = new String[] { "convert",
-							attachmentFile.getAbsolutePath(), "-resize",
-							rendition.getHeight() + "×" + rendition.getWidth(),
-							renditionFile.getAbsolutePath() };
-					log.debug("Trying to resize with ImageMagick: "+StringUtils.join(command," "));
-					
+
+					String[] command = null;
+					if (rendition.getFill()) {
+						command = new String[] {
+								"convert",
+								attachmentFile.getAbsolutePath(),
+								"-resize",
+								rendition.getHeight() + "x"
+										+ rendition.getWidth(),
+								"-gravity",
+								"center",
+								"-background",
+								"white",
+								"-extent",
+								rendition.getHeight() + "x"
+										+ rendition.getWidth(),
+								renditionFile.getAbsolutePath() };
+					} else {
+						command = new String[] {
+								"convert",
+								attachmentFile.getAbsolutePath(),
+								"-resize",
+								rendition.getHeight() + "×"
+										+ rendition.getWidth(),
+								renditionFile.getAbsolutePath() };
+
+					}
+					log.debug("Trying to resize with ImageMagick: "
+							+ StringUtils.join(command, " "));
+
 					rt.exec(command);
 				} catch (Exception t) {
 					log.warn("Exception creating rendition: " + rendition, t);
