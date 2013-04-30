@@ -22,6 +22,8 @@
 package org.klco.email2html;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,6 +41,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.zip.CRC32;
 
+import javax.imageio.ImageIO;
+import javax.imageio.stream.FileImageOutputStream;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 
@@ -329,8 +333,20 @@ public class OutputWriter {
 					log.warn("Max Memory: {}", rt.maxMemory());
 					log.warn("Total Memory: {}", rt.totalMemory());
 					try {
-						createRendition(attachmentFile, renditionFile,
-								rendition);
+						BufferedImage originalImage = ImageIO
+								.read(attachmentFile);
+						int type = originalImage.getType() == 0 ? BufferedImage.TYPE_INT_ARGB
+								: originalImage.getType();
+						BufferedImage resizedImage = new BufferedImage(
+								rendition.getWidth(), rendition.getHeight(),
+								type);
+						Graphics2D g = resizedImage.createGraphics();
+						g.drawImage(originalImage, 0, 0, rendition.getWidth(),
+								rendition.getHeight(), null);
+						g.dispose();
+						ImageIO.write(resizedImage, attachmentFile.getName()
+								.split("\\.")[1], new FileImageOutputStream(
+								renditionFile));
 					} catch (OutOfMemoryError oome2) {
 						log.warn(
 								"Unable to create rendition after garbage collection",
