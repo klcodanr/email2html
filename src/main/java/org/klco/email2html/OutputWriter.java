@@ -22,6 +22,8 @@
 package org.klco.email2html;
 
 import java.awt.Color;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,6 +41,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.zip.CRC32;
 
+import javax.imageio.ImageIO;
+import javax.imageio.stream.FileImageOutputStream;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 
@@ -339,15 +343,21 @@ public class OutputWriter {
 				} catch (Throwable t) {
 					log.warn("Exception creating rendition: " + rendition, t);
 					try {
-						Thumbnails
-								.of(new ByteArrayInputStream(new byte[0]))
-								.size(rendition.getWidth(),
-										rendition.getHeight())
-								.addFilter(
-										new Canvas(rendition.getWidth(),
-												rendition.getHeight(),
-												Positions.CENTER, Color.WHITE))
-								.toFile(renditionFile);
+						BufferedImage img = ImageIO.read(attachmentFile);
+						if (rendition.getHeight() > img.getHeight(null)
+								|| img.getHeight(null) == -1) {
+							img = (BufferedImage) img.getScaledInstance(-1,
+									rendition.getHeight(), Image.SCALE_SMOOTH);
+						}
+
+						if (rendition.getWidth() > img.getWidth(null)
+								|| img.getWidth(null) == -1) {
+							img = (BufferedImage) img.getScaledInstance(rendition.getWidth(),
+									-1, Image.SCALE_SMOOTH);
+						}
+						ImageIO.write(img, "image/"
+								+ renditionFile.getName().split("\\.")[1],
+								new FileImageOutputStream(renditionFile));
 					} catch (Exception e) {
 						log.warn("Exception creating placeholder rendition", e);
 					}
