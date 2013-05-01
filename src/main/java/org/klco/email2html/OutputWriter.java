@@ -332,7 +332,7 @@ public class OutputWriter {
 					
 					String[] command = new String[] { "convert",
 							attachmentFile.getAbsolutePath(), "-resize",
-							rendition.getHeight() + "×" + rendition.getWidth(),
+							rendition.getHeight() + "x" + rendition.getWidth(),
 							renditionFile.getAbsolutePath() };
 					log.debug("Trying to resize with ImageMagick: "+StringUtils.join(command," "));
 					
