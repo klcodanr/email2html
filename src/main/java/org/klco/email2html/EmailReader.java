@@ -365,6 +365,9 @@ public class EmailReader {
 		} else {
 			log.debug("Message already exists, not writing");
 		}
+		
+		log.debug("Unsetting the full message");
+		emailMessage.setFullMessage(null);
 		return emailMessage;
 	}
 
