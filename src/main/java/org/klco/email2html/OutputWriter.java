@@ -334,9 +334,7 @@ public class OutputWriter {
 								rendition.getHeight() + "x"
 										+ rendition.getWidth(),
 								"-gravity",
-								"center",
-								"-background",
-								"white",
+								"Center",
 								"-extent",
 								rendition.getHeight() + "x"
 										+ rendition.getWidth(),
