@@ -1,7 +1,7 @@
 Email2HTML
 ==========
 
-Simple library and maven plugin for converting emails into a HTML site.
+Simple library for converting emails into a HTML site.
 
 Email2HTML retrieves messages from an IMAP mail server and attempts to extract just the useful information by trimming replies, getting sender names and getting/sanitizing HTML content from the email.
 
@@ -14,92 +14,27 @@ Email2HTML is currently not available in the Maven Central Repository.  The only
 
 	mvn clean install
 
-Email2HTML can be invoked either as part of a maven build or through the command line.
+To invoke Email2HTML, execute the jar as such:
 
-To invoke through the command line, use the entry point: org.klco.email2html.Main.  To configure the application through the command line, create a file called email2html.properties and load it into the classpath.
+    java -jar email2html-0.0.2-SNAPSHOT-jar-with-dependencies.jar config.properties
 
-The application takes the following configuration values:
+The config.properties is a file which contains the configuration values for running Email2HTML.  The available configuration values are:
 
 * **breakStrings** - Strings which break the original message and the replies.
-* **folder** - The name of the folder to retrieve, defaults to 'Inbox'.
 * **excludeDuplicates**  - Flag for excluding duplicate attachments based on a CRC32 Checksum
-* **indexTemplateNames** - A comma-separated list of index templates, see templating below for more.
-* **messageTemplateName** - The message template name, see templating below for more.
+* **fileNameFormat** - The Java String format to generate the file names, defaults to %1$tY-%1$tm-%1$td-%2$s.html
+* **folder** - The name of the folder to retrieve, defaults to 'Inbox'.
+* **hook** - The fully qualified class name of a class which implements the Hook interface and is available in the classpath.  Used for extending the functionality of Email2HTML.
+* **imagesSubDir** - The sub-directory under which images should be stored.
+* **messagesSubDir** - The sub-directory under which the messages should be stored.
 * **outputDir** - The output directory to which to save the files.
 * **overwrite** - Whether or not to overwrite existing content.
 * **password** - The password to use to connect to the mail server, must be set.
-* **searchSubject** - The subject of the emails to search for, optional.
-* **templateDir** - The path to the folder containing the Velocity templates, must be set.
 * **renditions** - The renditions to create, in the format: [name1] [height1] [width1] [fill1 (optional)], [name2] [height2] [width2] [fill2 (optional)]
+* **searchSubject** - The subject of the emails to search for, optional.
+* **template** - The message template name, see templating below for more.
 * **url** - The URL to connect to retrieve the email.
 * **username** - The username with which to connect to the mail server.
-
-The second option is to add Email2HTML as a plugin in a Maven build.  To do this add a plugin to your POM similar to the following:
-
-	<plugins>
-		<plugin>
-			<groupId>org.klco.email2html</groupId>
-			<artifactId>email2html</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-			<executions>
-				<execution>
-					<id>download-code</id>
-					<phase>verify</phase>
-					<goals>
-						<goal>extractEmails</goal>
-					</goals>
-				</execution>
-			</executions>
-			<configuration>
-				<templateDir>${basedir}/src/main/resources</templateDir>
-				<folder>Inbox</folder>
-				<url>imap.gmail.com</url>
-				<serverId>gmail</serverId>
-				<outputDir>${basedir}/target/site</outputDir>
-				<indexTemplateNames>index.html.vm,all.html.vm</indexTemplateNames>
-				<renditions>
-					<rendition>
-						<name>thumbnail</name>
-						<width>100</width>
-						<height>100</height>
-						<fill>true</fill>
-					</rendition>
-					<rendition>
-						<name>web</name>
-						<width>800</width>
-						<height>800</height>
-					</rendition>
-				</renditions>
-			</configuration>
-		</plugin>
-
-The Email2HTML Maven plugin takes the following configuration values:
-
-* **breakStrings** - Strings which break the original message and the replies.
-* **excludeDuplicates**  - Flag for excluding duplicate attachments based on a CRC32 Checksum
-* **folder** - The name of the folder to retrieve, defaults to 'Inbox'.
-* **indexTemplateNames** - A comma-separated list of index templates, see templating below for more.
-* **messageTemplateName** - The message template name, see templating below for more.
-* **outputDir** - The output directory to which to save the files.
-* **overwrite** - Whether or not to overwrite existing content.
-* **renditions** - The renditions to create, with the keys: name, width, height and optionally, fill.
-* **searchSubject** - The subject of the emails to search for, optional.
-* **serverId** - The id of the server to retrieve from the settings.xml, must contain the username and password.
-* **templateDir** - The path to the folder containing the Velocity templates, must be set.
-* **url** - The URL to connect to retrieve the email.
-
-Templates 
-----------
-
-Email2HTML uses [Apache Velocity](http://velocity.apache.org/).  All templates will be passed the Velocity general tools.  The names of the files and image folders can be derived from the sentDate in the format *yyyy-MM-dd-HH-mm-ss*.  Two different types of templates are available:
-
-**Message Template**
-
-Template for rendering a single message.  This will be passed an instance of org.klco.email2html.models.EmailMessage with the data loaded from the server in the emailMessage variable.  A file will then be created based on the date the email was sent.
-
-**Index Templates**
-
-You can specify multiple index templates.  You can specify multiple templates each template will result in one page being creating with the name of the template before '.vm'.  These templates will be passed a sorted list of EmailMessages in the messages variable.
 
 License 
 ---------- 
