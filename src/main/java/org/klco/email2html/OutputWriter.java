@@ -24,18 +24,17 @@ package org.klco.email2html;
 import java.awt.Color;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.StringWriter;
+import java.text.Normalizer;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.CRC32;
 
@@ -48,13 +47,10 @@ import net.coobird.thumbnailator.geometry.Positions;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.Velocity;
-import org.apache.velocity.tools.ToolManager;
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.klco.email2html.models.EmailMessage;
-import org.klco.email2html.plugin.Rendition;
+import org.klco.email2html.models.Rendition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,11 +80,6 @@ public class OutputWriter {
 	 */
 	private boolean excludeDuplicates;
 
-	/**
-	 * The list of 'index' file templates.
-	 */
-	private List<Template> indexTemplates = new ArrayList<Template>();
-
 	/** The output dir. */
 	private File outputDir;
 
@@ -97,21 +88,23 @@ public class OutputWriter {
 	 */
 	private Rendition[] renditions;
 
-	/** The template. */
-	private Template template;
-
 	/**
-	 * The velocity tool manager.
+	 * The template content
 	 */
-	private ToolManager velocityToolManager;
+	private String template;
+
+	private Email2HTMLConfiguration config;
 
 	/**
 	 * Constructs a new OutputWriter.
 	 * 
 	 * @param config
 	 *            the current configuration
+	 * @throws IOException
+	 * @throws FileNotFoundException
 	 */
-	public OutputWriter(Email2HTMLConfiguration config) {
+	public OutputWriter(Email2HTMLConfiguration config)
+			throws FileNotFoundException, IOException {
 		log.trace("HTMLWriter");
 
 		outputDir = new File(config.getOutputDir());
@@ -121,28 +114,13 @@ public class OutputWriter {
 			outputDir.mkdirs();
 		}
 
-		log.debug("Initializing templating engine");
-		Velocity.setProperty("file.resource.loader.path",
-				config.getTemplateDir());
-		Velocity.init();
-
-		log.info("Initializing template {}", config.getMessageTemplateName());
-		template = Velocity.getTemplate(config.getMessageTemplateName());
-
-		log.info("Initializing index templates from: {}",
-				config.getIndexTemplateNames());
-		for (String templateName : config.getIndexTemplateNames().split("\\,")) {
-			log.debug("Initializing index template from: {}", templateName);
-			indexTemplates.add(Velocity.getTemplate(templateName));
-		}
-
-		log.debug("Loading Velocity tools");
-		velocityToolManager = new ToolManager();
-		velocityToolManager.configure("velocity-tools.xml");
+		template = IOUtils.toString(
+				new FileInputStream(new File(config.getTemplate())), "UTF-8");
 
 		this.renditions = config.getRenditions();
 
 		this.excludeDuplicates = config.isExcludeDuplicates();
+		this.config = config;
 	}
 
 	/**
@@ -161,7 +139,7 @@ public class OutputWriter {
 		log.trace("addAttachment");
 
 		File attachmentFolder = new File(outputDir.getAbsolutePath()
-				+ File.separator
+				+ File.separator + config.getImagesSubDir() + File.separator
 				+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
 		File attachmentFile = new File(attachmentFolder, part.getFileName());
 
@@ -255,6 +233,7 @@ public class OutputWriter {
 		try {
 
 			attachmentFolder = new File(outputDir.getAbsolutePath()
+					+ File.separator + config.getImagesSubDir()
 					+ File.separator
 					+ FILE_DATE_FORMAT.format(containingMessage.getSentDate()));
 			if (!attachmentFolder.exists()) {
@@ -324,7 +303,7 @@ public class OutputWriter {
 					log.warn("Free Memory: {}", rt.freeMemory());
 					log.warn("Max Memory: {}", rt.maxMemory());
 					log.warn("Total Memory: {}", rt.totalMemory());
-					
+
 					String[] command = null;
 					if (rendition.getFill()) {
 						command = new String[] {
@@ -396,77 +375,69 @@ public class OutputWriter {
 	public void writeHTML(EmailMessage emailMessage) throws IOException {
 		log.trace("writeHTML");
 
-		log.debug("Initializing templating context");
-		VelocityContext context = new VelocityContext(
-				velocityToolManager.createContext());
-		context.put("emailMessage", emailMessage);
+		Map<String, Object> params = emailMessage.toMap();
+		if (config.getHookObj() != null) {
+			config.getHookObj().beforeWrite(emailMessage, params);
+		}
 
+		File messageFolder = new File(outputDir.getAbsolutePath()
+				+ File.separator + config.getMessagesSubDir());
+		if (!messageFolder.exists()) {
+			log.debug("Creating messages folder");
+			messageFolder.mkdirs();
+		}
+
+		StrSubstitutor sub = new StrSubstitutor(params);
+		String fileContent = sub.replace(template);
+
+		String name = String.format(config.getFileNameFormat(),
+				emailMessage.getSentDate(), toPath(emailMessage.getSubject()));
 		File messageFile = new File(outputDir.getAbsolutePath()
-				+ File.separator
-				+ FILE_DATE_FORMAT.format(emailMessage.getSentDate()) + ".html");
-		log.debug("Writing message to file {}", messageFile.getAbsolutePath());
+				+ File.separator + config.getMessagesSubDir() + File.separator
+				+ name);
 
-		writeHTML(messageFile, context, template);
-	}
-
-	/**
-	 * Writes the content from the merging of the context and template to the
-	 * specified file.
-	 * 
-	 * @param messageFile
-	 *            the file to save the contents
-	 * @param context
-	 *            the context containing all of the properties to save
-	 * @param template
-	 *            the velocity template to use
-	 * @throws IOException
-	 */
-	private void writeHTML(File messageFile, VelocityContext context,
-			Template template) throws IOException {
-		log.trace("writeHTML");
-
-		if (!messageFile.exists()) {
-			log.debug("Creating message file");
-			messageFile.createNewFile();
-		}
-		log.debug("Merging message into template");
-		StringWriter sw = new StringWriter();
-		template.merge(context, sw);
-
-		log.debug("Writing contents to file");
-		FileOutputStream fos = null;
+		OutputStream os = null;
 		try {
-			fos = new FileOutputStream(messageFile);
-			IOUtils.copy(
-					new ByteArrayInputStream(sw.toString().getBytes("UTF-8")),
-					fos);
+			os = new FileOutputStream(messageFile);
+			IOUtils.write(fileContent, new FileOutputStream(messageFile));
+			log.debug("Writing message to file {}",
+					messageFile.getAbsolutePath());
 		} finally {
-			IOUtils.closeQuietly(fos);
+			IOUtils.closeQuietly(os);
+		}
+		if (config.getHookObj() != null) {
+			config.getHookObj().afterWrite(emailMessage, params, messageFile);
 		}
 	}
 
 	/**
-	 * Writes the index file to the filesystem
+	 * Converts the specified name or arbitrary string into a path by downcasing
+	 * it and replacing all non-ASCII characters with dashes.
 	 * 
-	 * @param messages
-	 *            the messages for the index file to be generated from.
-	 * @throws IOException
+	 * @param str
+	 *            the string to convert
+	 * @return the path
 	 */
-	public void writeIndex(List<EmailMessage> messages) throws IOException {
-		log.trace("writeHTML");
-
-		log.debug("Initializing templating context");
-		VelocityContext context = new VelocityContext(
-				velocityToolManager.createContext());
-		context.put("messages", messages);
-
-		for (Template indexTemplate : indexTemplates) {
-			String fileName = indexTemplate.getName().substring(0,
-					indexTemplate.getName().indexOf(".vm"));
-			File messageFile = new File(outputDir.getAbsolutePath()
-					+ File.separator + fileName);
-			log.debug("Writing index to file {}", messageFile.getAbsolutePath());
-			writeHTML(messageFile, context, indexTemplate);
+	public static final String toPath(final String str) {
+		if (str == null) {
+			return null;
+		}
+		boolean prev = false;
+		final StringBuilder sb = new StringBuilder();
+		for (char c : Normalizer.normalize(str.toLowerCase(),
+				Normalizer.Form.NFKD).toCharArray()) {
+			if (Character.isLetterOrDigit(c)) {
+				sb.append(c);
+				prev = true;
+			} else if (prev) {
+				sb.append('-');
+				prev = false;
+			}
+		}
+		if (sb.toString().endsWith("-")) {
+			return sb.substring(0, sb.length() - 1);
+		} else {
+			return sb.toString();
 		}
 	}
 }

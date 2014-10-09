@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.Properties;
 
 import org.klco.email2html.models.Email2HTMLConfiguration;
-import org.klco.email2html.plugin.Rendition;
+import org.klco.email2html.models.Rendition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +47,10 @@ public class ConfigurationUtils {
 	 * @param props
 	 *            the props
 	 * @return the email2 html configuration
+	 * @throws ClassNotFoundException 
+	 * @throws InstantiationException 
 	 */
-	public static Email2HTMLConfiguration loadProperties(Properties props) {
+	public static Email2HTMLConfiguration loadProperties(Properties props) throws InstantiationException, ClassNotFoundException {
 		log.trace("loadProperties");
 		Email2HTMLConfiguration config = new Email2HTMLConfiguration();
 
@@ -71,6 +73,8 @@ public class ConfigurationUtils {
 					log.info("Setting property {} to value {}", key, overwrite);
 					field.setAccessible(true);
 					field.set(config, overwrite);
+				} else if(field.getName().equals("hook")){
+					config.setHook(value);
 				} else {
 					log.info("Setting property {} to value {}", key, value);
 					field.setAccessible(true);

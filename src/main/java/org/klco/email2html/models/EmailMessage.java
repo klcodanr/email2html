@@ -24,7 +24,9 @@ package org.klco.email2html.models;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The Class EmailMessage.
@@ -163,5 +165,16 @@ public class EmailMessage {
 	 */
 	public void setSubject(String subject) {
 		this.subject = subject;
+	}
+	
+	public Map<String,Object> toMap(){
+		Map<String,Object> map = new HashMap<String,Object>();
+		map.put("attachments",attachments);
+		map.put("fullMessage",fullMessage);
+		map.put("message",message);
+		map.put("sender",sender);
+		map.put("sentDate",sentDate);
+		map.put("subject",subject);
+		return map;
 	}
 }

@@ -1,3 +1,5 @@
+package org.klco.email2html;
+
 /*
  * Copyright (C) 2012 Dan Klco
  * 
@@ -19,8 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
  * IN THE SOFTWARE.
  */
-package org.klco.email2html;
 
+
+import java.io.FileInputStream;
 import java.util.Properties;
 
 import org.klco.email2html.EmailReader;
@@ -40,9 +43,6 @@ public class Main {
 	/** The Constant log. */
 	private static final Logger log = LoggerFactory.getLogger(Main.class);
 
-	/** The Constant PROPERTIES_FILE_NAME. */
-	public static final String PROPERTIES_FILE_NAME = "email2html.properties";
-
 	/**
 	 * The main method.
 	 * 
@@ -52,17 +52,20 @@ public class Main {
 	public static void main(String[] args) {
 		log.trace("main");
 
-		Properties props = new Properties();
-		try {
-			props.load(Main.class.getClassLoader().getResourceAsStream(
-					PROPERTIES_FILE_NAME));
-			Email2HTMLConfiguration config = ConfigurationUtils
-					.loadProperties(props);
-			EmailReader reader = new EmailReader(config);
-			reader.readEmails();
-		} catch (Exception e) {
-			log.error("Unexpected exception loading emails", e);
+		if(args.length != 1){
+			log.info("Usage: java -jar Email2Html.jar config.properties");
+			System.exit(-1);
+		} else {
+			Properties props = new Properties();
+			try {
+				props.load(new FileInputStream(args[0]));
+				Email2HTMLConfiguration config = ConfigurationUtils
+						.loadProperties(props);
+				EmailReader reader = new EmailReader(config);
+				reader.readEmails();
+			} catch (Exception e) {
+				log.error("Unexpected exception loading emails", e);
+			}
 		}
-
 	}
 }

@@ -21,9 +21,8 @@
  */
 package org.klco.email2html.models;
 
-import org.klco.email2html.plugin.Rendition;
+import org.klco.email2html.Hook;
 
-// TODO: Auto-generated Javadoc
 /**
  * Configures the Email -> HTML process.
  * 
@@ -34,19 +33,32 @@ public class Email2HTMLConfiguration {
 	/**
 	 * Strings which break the original message and the replies.
 	 */
-	private String breakStrings;
-	
-	/** Flag for excluding duplicate attachments based on their MD5 Checksum (if available). */
+	private String breakStrings = "<div class=\"gmail_quote,<hr,Sent from my,Technical details of permanent failure,Forwarded message,";
+
+	/**
+	 * Flag for excluding duplicate attachments and messages based on their MD5
+	 * Checksum (if available).
+	 */
 	private boolean excludeDuplicates = true;
+
+	/** The Java String format to generate the file names **/
+	private String fileNameFormat = "%1$tY-%1$tm-%1$td-%2$s.html";
 
 	/** The name of the folder to retrieve, defaults to 'Inbox'. */
 	private String folder = "Inbox";
 
-	/** The index template names. */
-	private String indexTemplateNames;
+	/**
+	 * The class for the hook to use
+	 */
+	private String hook;
+
+	/**
+	 * The actual hook object
+	 */
+	private Hook hookObj;
 
 	/** The message template name. */
-	private String messageTemplateName;
+	private String template;
 
 	/**
 	 * The output directory to which to save the files, defaults to the current
@@ -75,11 +87,6 @@ public class Email2HTMLConfiguration {
 	private String searchSubject;
 
 	/**
-	 * The path to the folder containing the Velocity templates, must be set.
-	 */
-	private String templateDir;
-
-	/**
 	 * The URL to connect to retrieve the email.
 	 */
 	private String url;
@@ -90,12 +97,26 @@ public class Email2HTMLConfiguration {
 	private String username;
 
 	/**
+	 * The sub-directory under which images should be stored.
+	 */
+	private String imagesSubDir;
+
+	/**
+	 * The sub-directory under which the messages should be stored.
+	 */
+	private String messagesSubDir;
+
+	/**
 	 * Gets the break strings.
 	 * 
 	 * @return the break strings
 	 */
 	public String getBreakStrings() {
 		return breakStrings;
+	}
+
+	public String getFileNameFormat() {
+		return fileNameFormat;
 	}
 
 	/**
@@ -108,21 +129,31 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
-	 * Gets the index template names.
-	 * 
-	 * @return the index template names
+	 * @return the hook
 	 */
-	public String getIndexTemplateNames() {
-		return indexTemplateNames;
+	public String getHook() {
+		return hook;
 	}
 
 	/**
-	 * Gets the message template name.
-	 * 
-	 * @return the message template name
+	 * @return the hookObj
 	 */
-	public String getMessageTemplateName() {
-		return messageTemplateName;
+	public Hook getHookObj() {
+		return hookObj;
+	}
+
+	/**
+	 * @return the imagesSubDir
+	 */
+	public String getImagesSubDir() {
+		return imagesSubDir;
+	}
+
+	/**
+	 * @return the messagesSubDir
+	 */
+	public String getMessagesSubDir() {
+		return messagesSubDir;
 	}
 
 	/**
@@ -154,7 +185,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Gets the renditions.
-	 *
+	 * 
 	 * @return the renditions
 	 */
 	public Rendition[] getRenditions() {
@@ -171,12 +202,12 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
-	 * Gets the template dir.
+	 * Gets the template.
 	 * 
-	 * @return the template dir
+	 * @return the template
 	 */
-	public String getTemplateDir() {
-		return templateDir;
+	public String getTemplate() {
+		return template;
 	}
 
 	/**
@@ -199,7 +230,7 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Checks if is exclude duplicates.
-	 *
+	 * 
 	 * @return true, if is exclude duplicates
 	 */
 	public boolean isExcludeDuplicates() {
@@ -218,11 +249,16 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the exclude duplicates.
-	 *
-	 * @param excludeDuplicates the new exclude duplicates
+	 * 
+	 * @param excludeDuplicates
+	 *            the new exclude duplicates
 	 */
 	public void setExcludeDuplicates(boolean excludeDuplicates) {
 		this.excludeDuplicates = excludeDuplicates;
+	}
+
+	public void setFileNameFormat(String fileNameFormat) {
+		this.fileNameFormat = fileNameFormat;
 	}
 
 	/**
@@ -236,23 +272,35 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
-	 * Sets the index template names.
-	 * 
-	 * @param indexTemplateNames
-	 *            the new index template names
+	 * @param hook
+	 *            the hook to set
+	 * @throws ClassNotFoundException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
 	 */
-	public void setIndexTemplateNames(String indexTemplateNames) {
-		this.indexTemplateNames = indexTemplateNames;
+	public void setHook(String hook) throws InstantiationException,
+			IllegalAccessException, ClassNotFoundException {
+		this.hook = hook;
+		if (hook != null) {
+			hookObj = (Hook) this.getClass().getClassLoader().loadClass(hook)
+					.newInstance();
+		}
 	}
 
 	/**
-	 * Sets the message template name.
-	 * 
-	 * @param messageTemplateName
-	 *            the new message template name
+	 * @param imagesSubDir
+	 *            the imagesSubDir to set
 	 */
-	public void setMessageTemplateName(String messageTemplateName) {
-		this.messageTemplateName = messageTemplateName;
+	public void setImagesSubDir(String imagesSubDir) {
+		this.imagesSubDir = imagesSubDir;
+	}
+
+	/**
+	 * @param messagesSubDir
+	 *            the messagesSubDir to set
+	 */
+	public void setMessagesSubDir(String messagesSubDir) {
+		this.messagesSubDir = messagesSubDir;
 	}
 
 	/**
@@ -266,10 +314,10 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
-	 * Sets the overwrite.
+	 * Sets the overwrite flag.
 	 * 
 	 * @param overwrite
-	 *            the new overwrite
+	 *            the new overwrite flag
 	 */
 	public void setOverwrite(boolean overwrite) {
 		this.overwrite = overwrite;
@@ -287,8 +335,9 @@ public class Email2HTMLConfiguration {
 
 	/**
 	 * Sets the renditions.
-	 *
-	 * @param renditions the new renditions
+	 * 
+	 * @param renditions
+	 *            the new renditions
 	 */
 	public void setRenditions(Rendition[] renditions) {
 		this.renditions = renditions;
@@ -305,13 +354,13 @@ public class Email2HTMLConfiguration {
 	}
 
 	/**
-	 * Sets the template dir.
+	 * Sets the template.
 	 * 
-	 * @param templateDir
-	 *            the new template dir
+	 * @param template
+	 *            the template
 	 */
-	public void setTemplateDir(String templateDir) {
-		this.templateDir = templateDir;
+	public void setTemplate(String template) {
+		this.template = template;
 	}
 
 	/**

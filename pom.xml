@@ -4,7 +4,7 @@
 	<groupId>org.klco.email2html</groupId>
 	<artifactId>email2html</artifactId>
 	<version>0.0.2-SNAPSHOT</version>
-	<packaging>maven-plugin</packaging>
+	<packaging>jar</packaging>
 
 	<name>Email2HTML</name>
 	<description>Simple library for converting emails to a HTML Site</description>
@@ -28,24 +28,14 @@
 			<version>1.4</version>
 		</dependency>
 		<dependency>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+			<version>2.4</version>
+		</dependency>
+		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
 			<version>1.7.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.velocity</groupId>
-			<artifactId>velocity</artifactId>
-			<version>1.7</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.velocity</groupId>
-			<artifactId>velocity-tools</artifactId>
-			<version>2.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-plugin-api</artifactId>
-			<version>3.0.4</version>
 		</dependency>
 		<dependency>
 			<groupId>owasp-java-html-sanitizer</groupId>
@@ -53,24 +43,14 @@
 			<version>r133</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-settings</artifactId>
-			<version>3.0.4</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-core</artifactId>
-			<version>3.0.4</version>
-		</dependency>
-		<dependency>
-			<groupId>org.sonatype.plexus</groupId>
-			<artifactId>plexus-sec-dispatcher</artifactId>
-			<version>1.4</version>
-		</dependency>
-		<dependency>
 			<groupId>net.coobird</groupId>
 			<artifactId>thumbnailator</artifactId>
 			<version>0.4.3</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.11</version>
 		</dependency>
 	</dependencies>
 
@@ -87,51 +67,20 @@
 				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-plugin-plugin</artifactId>
-				<version>2.5.1</version>
-				<configuration>
-					<goalPrefix>email2html</goalPrefix>
-				</configuration>
+				<artifactId>maven-assembly-plugin</artifactId>
 				<executions>
 					<execution>
-						<id>generated-helpmojo</id>
+						<phase>package</phase>
 						<goals>
-							<goal>helpmojo</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>2.1.2</version>
-				<executions>
-					<execution>
-						<id>create-sources</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>jar-no-fork</goal>
+							<goal>single</goal>
 						</goals>
 					</execution>
 				</executions>
 				<configuration>
-					<attach>false</attach>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.8.1</version>
-				<executions>
-					<execution>
-						<id>create-javadoc</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>

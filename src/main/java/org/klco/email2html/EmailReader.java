@@ -22,13 +22,10 @@
 package org.klco.email2html;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Properties;
 
 import javax.mail.BodyPart;
@@ -153,12 +150,18 @@ public class EmailReader {
 	 * 
 	 * @param config
 	 *            the config
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
 	 */
-	public EmailReader(Email2HTMLConfiguration config) {
+	public EmailReader(Email2HTMLConfiguration config) throws FileNotFoundException, IOException {
 		this.config = config;
 		outputWriter = new OutputWriter(config);
 
 		overwrite = config.getOverwrite();
+		
+		if(config.getHookObj() != null){
+			config.getHookObj().init(config);
+		}
 
 		breakStrings = config.getBreakStrings().split("\\,");
 		log.debug("Using break strings: " + Arrays.toString(breakStrings));
@@ -281,13 +284,12 @@ public class EmailReader {
 				messages = folder.getMessages();
 			}
 
-			List<EmailMessage> sortedMessages = new ArrayList<EmailMessage>();
 			log.debug("Loading messages from the server");
 			for (int i = 0; i < messages.length; i++) {
 				log.info("Processing message {} of {}", i, messages.length);
 				Message message = messages[i];
 				try {
-					sortedMessages.add(saveMessage(session, message));
+					saveMessage(session, message);
 				} catch (Exception e) {
 					log.error(
 							"Exception saving message: "
@@ -295,21 +297,11 @@ public class EmailReader {
 											.getSentDate()), e);
 				}
 			}
-
-			log.debug("Sorting messages");
-			Collections.sort(sortedMessages, new Comparator<EmailMessage>() {
-				public int compare(EmailMessage o1, EmailMessage o2) {
-					return o1.getSentDate().compareTo(o2.getSentDate());
-				}
-			});
-
-			log.debug("Writing index file");
-			outputWriter.writeIndex(sortedMessages);
-
+			if(config.getHookObj() != null){
+				config.getHookObj().afterComplete();
+			}
 		} catch (MessagingException e) {
 			log.error("Exception accessing emails", e);
-		} catch (IOException e) {
-			log.error("IOException accessing emails", e);
 		}
 	}
 
@@ -333,6 +325,7 @@ public class EmailReader {
 
 		log.debug("Processing message from: " + message.getSentDate());
 
+		
 		log.debug("Loading default properties");
 		EmailMessage emailMessage = new EmailMessage();
 		emailMessage.setSubject(message.getSubject());
@@ -357,6 +350,9 @@ public class EmailReader {
 			MimeMessage clonedMessage = new MimeMessage(session, bis);
 			bis.close();
 			getMessageContent(emailMessage, clonedMessage);
+		}
+		if(config.getHookObj() != null){
+			config.getHookObj().afterRead(message, emailMessage);
 		}
 
 		boolean alreadyExists = outputWriter.fileExists(emailMessage);
