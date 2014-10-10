@@ -376,6 +376,10 @@ public class OutputWriter {
 		log.trace("writeHTML");
 
 		Map<String, Object> params = emailMessage.toMap();
+		params.put(
+				"attachmentFolder",
+				config.getImagesSubDir() + File.separator
+						+ FILE_DATE_FORMAT.format(emailMessage.getSentDate()));
 		if (config.getHookObj() != null) {
 			config.getHookObj().beforeWrite(emailMessage, params);
 		}

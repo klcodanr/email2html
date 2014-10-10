@@ -169,7 +169,11 @@ public class EmailMessage {
 	
 	public Map<String,Object> toMap(){
 		Map<String,Object> map = new HashMap<String,Object>();
-		map.put("attachments",attachments);
+		List<String> attachmentNames = new ArrayList<String>();
+		for(File attachment : attachments){
+			attachmentNames.add(attachment.getName());
+		}
+		map.put("attachments",attachmentNames);
 		map.put("fullMessage",fullMessage);
 		map.put("message",message);
 		map.put("sender",sender);
