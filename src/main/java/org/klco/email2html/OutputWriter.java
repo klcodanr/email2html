@@ -310,13 +310,17 @@ public class OutputWriter {
 								"convert",
 								attachmentFile.getAbsolutePath(),
 								"-resize",
-								rendition.getHeight() + "x"
-										+ rendition.getWidth(),
+								(rendition.getHeight() x 2) + "x",
+								"-resize",
+								"'x" + (rendition.getHeight() x 2) + "<'",
+								"-resize",
+								"50%",
 								"-gravity",
-								"Center",
-								"-extent",
+								"center",
+								"-crop",
 								rendition.getHeight() + "x"
-										+ rendition.getWidth(),
+										+ rendition.getWidth() + "+0+0",
+								"+repage",
 								renditionFile.getAbsolutePath() };
 					} else {
 						command = new String[] {
