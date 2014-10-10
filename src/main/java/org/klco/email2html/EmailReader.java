@@ -287,7 +287,7 @@ public class EmailReader {
 			log.debug("Loading messages from the server");
 			for (int i = 0; i < messages.length; i++) {
 				String id = (i +" of "+ messages.length);
-				log.info("Processing message {{} of {}}}", id);
+				log.info("Processing message {}", id);
 				Message message = messages[i];
 				if(!folder.isOpen()){
 					folder.open(Folder.READ_ONLY);
