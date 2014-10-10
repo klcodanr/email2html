@@ -286,15 +286,18 @@ public class EmailReader {
 
 			log.debug("Loading messages from the server");
 			for (int i = 0; i < messages.length; i++) {
-				log.info("Processing message {} of {}", i, messages.length);
+				String id = (i +" of "+ messages.length);
+				log.info("Processing message {{} of {}}}", id);
 				Message message = messages[i];
+				if(!folder.isOpen()){
+					folder.open(Folder.READ_ONLY);
+				}
 				try {
+					id = READABLE_DATE_FORMAT.format(message.getSentDate());
 					saveMessage(session, message);
 				} catch (Exception e) {
-					log.error(
-							"Exception saving message: "
-									+ READABLE_DATE_FORMAT.format(message
-											.getSentDate()), e);
+					log.error("Exception saving message: "
+						+ id, e);
 				}
 			}
 			if(config.getHookObj() != null){
