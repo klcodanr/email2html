@@ -99,12 +99,12 @@ public class Email2HTMLConfiguration {
 	/**
 	 * The sub-directory under which images should be stored.
 	 */
-	private String imagesSubDir;
+	private String imagesSubDir = "images/posts";
 
 	/**
 	 * The sub-directory under which the messages should be stored.
 	 */
-	private String messagesSubDir;
+	private String messagesSubDir = "_posts";
 
 	/**
 	 * Gets the break strings.
