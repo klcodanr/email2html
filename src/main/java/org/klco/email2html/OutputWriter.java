@@ -113,7 +113,9 @@ public class OutputWriter {
 			log.info("Creating ouput directory");
 			outputDir.mkdirs();
 		}
-
+		if(StringUtils.isEmpty(config.getTemplate())){
+			throw new FileNotFoundException("No template file specified");
+		}
 		template = IOUtils.toString(
 				new FileInputStream(new File(config.getTemplate())), "UTF-8");
 
