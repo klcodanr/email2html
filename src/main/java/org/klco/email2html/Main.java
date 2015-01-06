@@ -23,10 +23,10 @@ package org.klco.email2html;
  */
 
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-import org.klco.email2html.EmailReader;
 import org.klco.email2html.models.Email2HTMLConfiguration;
 import org.klco.email2html.utils.ConfigurationUtils;
 import org.slf4j.Logger;
@@ -58,7 +58,9 @@ public class Main {
 		} else {
 			Properties props = new Properties();
 			try {
-				props.load(new FileInputStream(args[0]));
+				File configFile = new File(args[0]);
+				
+				props.load(new FileInputStream(configFile.getAbsolutePath()));
 				Email2HTMLConfiguration config = ConfigurationUtils
 						.loadProperties(props);
 				EmailReader reader = new EmailReader(config);

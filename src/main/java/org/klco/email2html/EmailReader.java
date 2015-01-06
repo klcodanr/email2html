@@ -150,16 +150,17 @@ public class EmailReader {
 	 * 
 	 * @param config
 	 *            the config
-	 * @throws IOException 
-	 * @throws FileNotFoundException 
+	 * @throws IOException
+	 * @throws FileNotFoundException
 	 */
-	public EmailReader(Email2HTMLConfiguration config) throws FileNotFoundException, IOException {
+	public EmailReader(Email2HTMLConfiguration config)
+			throws FileNotFoundException, IOException {
 		this.config = config;
 		outputWriter = new OutputWriter(config);
 
 		overwrite = config.getOverwrite();
-		
-		if(config.getHookObj() != null){
+
+		if (config.getHookObj() != null) {
 			config.getHookObj().init(config);
 		}
 
@@ -286,21 +287,20 @@ public class EmailReader {
 
 			log.debug("Loading messages from the server");
 			for (int i = 0; i < messages.length; i++) {
-				String id = (i +" of "+ messages.length);
+				String id = (i + " of " + messages.length);
 				log.info("Processing message {}", id);
 				Message message = messages[i];
-				if(!folder.isOpen()){
+				if (!folder.isOpen()) {
 					folder.open(Folder.READ_ONLY);
 				}
 				try {
 					id = READABLE_DATE_FORMAT.format(message.getSentDate());
 					saveMessage(session, message);
 				} catch (Exception e) {
-					log.error("Exception saving message: "
-						+ id, e);
+					log.error("Exception saving message: " + id, e);
 				}
 			}
-			if(config.getHookObj() != null){
+			if (config.getHookObj() != null) {
 				config.getHookObj().afterComplete();
 			}
 		} catch (MessagingException e) {
@@ -322,13 +322,12 @@ public class EmailReader {
 	 * @throws MessagingException
 	 *             the messaging exception
 	 */
-	private EmailMessage saveMessage(Session session, Message message)
+	private void saveMessage(Session session, Message message)
 			throws IOException, MessagingException {
 		log.trace("saveMessage");
 
 		log.debug("Processing message from: " + message.getSentDate());
 
-		
 		log.debug("Loading default properties");
 		EmailMessage emailMessage = new EmailMessage();
 		emailMessage.setSubject(message.getSubject());
@@ -354,17 +353,19 @@ public class EmailReader {
 			bis.close();
 			getMessageContent(emailMessage, clonedMessage);
 		}
-		if(config.getHookObj() != null){
-			config.getHookObj().afterRead(message, emailMessage);
+		boolean write = true;
+		if (config.getHookObj() != null) {
+			write = config.getHookObj().afterRead(message, emailMessage);
 		}
 
-		boolean alreadyExists = outputWriter.fileExists(emailMessage);
-		if (overwrite || !alreadyExists) {
-			outputWriter.writeHTML(emailMessage);
-		} else {
-			log.debug("Message already exists, not writing");
+		if (write) {
+			boolean alreadyExists = outputWriter.fileExists(emailMessage);
+			if (overwrite || !alreadyExists) {
+				outputWriter.writeHTML(emailMessage);
+			} else {
+				log.debug("Message already exists, not writing");
+			}
 		}
-		return emailMessage;
 	}
 
 	/**

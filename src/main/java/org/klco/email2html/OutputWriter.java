@@ -116,8 +116,10 @@ public class OutputWriter {
 		if(StringUtils.isEmpty(config.getTemplate())){
 			throw new FileNotFoundException("No template file specified");
 		}
+		File templateFile = new File(config.getTemplate());
+		log.debug("Loading template from {}", templateFile.getAbsolutePath());
 		template = IOUtils.toString(
-				new FileInputStream(new File(config.getTemplate())), "UTF-8");
+				new FileInputStream(templateFile), "UTF-8");
 
 		this.renditions = config.getRenditions();
 

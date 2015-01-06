@@ -23,13 +23,16 @@ public interface Hook {
 
 	/**
 	 * Will be executed after the EmailMessage is read from the email server.
+	 * The return code will determine whether ot not the item should be written.
 	 * 
 	 * @param sourceMessage
 	 *            the message from the server
 	 * @param message
 	 *            the message created from the source message
+	 * @return if true the item will be written, if false the item will be
+	 *         ignored
 	 */
-	public void afterRead(Message sourceMessage, EmailMessage message);
+	public boolean afterRead(Message sourceMessage, EmailMessage message);
 
 	/**
 	 * Will be executed after the message is written to the filesystem.
